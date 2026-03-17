@@ -12,6 +12,11 @@
 </style>
 </head>
 <body>
+<nav class="top-nav">
+  <a href="03_dfs_dfid_bfs.html">← DFS · BFS</a>
+  <a class="home" href="index.html">⌂ Index</a>
+  <a href="05_minimax_alphabeta.html">Minimax →</a>
+</nav>
 <div class="hero">
   <div class="tag">COS314 · Topic 06</div>
   <h1>Hill Climbing<br>&amp; A* Algorithm</h1>
@@ -222,6 +227,23 @@ document.querySelectorAll('iframe.demo-frame').forEach(f => {
     try { this.style.height = this.contentDocument.documentElement.scrollHeight + 'px'; } catch(e) {}
   });
 });
+</script>
+<script>
+(function(){
+  const bar=document.createElement('div');
+  bar.id='progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll',()=>{
+    const max=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(max>0?window.scrollY/max*100:0)+'%';
+  },{passive:true});
+  const links=document.querySelectorAll('.top-nav a');
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    if(e.key==='ArrowLeft'&&links[0])location.href=links[0].href;
+    if(e.key==='ArrowRight'&&links[2])location.href=links[2].href;
+  });
+})();
 </script>
 </body>
 </html>

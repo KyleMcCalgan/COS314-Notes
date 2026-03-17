@@ -258,6 +258,60 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .sep { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 hr.sep { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 
+/* ── Progress bar ─────────────────────────────────────── */
+#progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  width: 0%;
+  z-index: 200;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+/* ── Top nav bar ──────────────────────────────────────── */
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.top-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.3px;
+}
+.top-nav a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.top-nav a.home {
+  color: var(--text);
+}
+.top-nav a.home:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* ── Nav hint ─────────────────────────────────────────── */
 .nav-hint {
   text-align: center;

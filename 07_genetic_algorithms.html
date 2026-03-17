@@ -11,6 +11,11 @@
 </style>
 </head>
 <body>
+<nav class="top-nav">
+  <a href="06_sa_tabu_ils.html">← SA · Tabu · ILS</a>
+  <a class="home" href="index.html">⌂ Index</a>
+  <a href="ST1_Summary.html">ST1 Summary →</a>
+</nav>
 <div class="hero">
   <div class="tag">COS314 · Topic 10</div>
   <h1>Genetic Algorithms</h1>
@@ -207,5 +212,22 @@ Offspring: │ 1 │ 0 │ 0 │ 0 │ 1 │ 0 │ 0 │ 1 │</div>
 
   <div class="nav-hint">COS314 Study Pack · Topic 10 of 10 · Genetic Algorithms</div>
 </div>
+<script>
+(function(){
+  const bar=document.createElement('div');
+  bar.id='progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll',()=>{
+    const max=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(max>0?window.scrollY/max*100:0)+'%';
+  },{passive:true});
+  const links=document.querySelectorAll('.top-nav a');
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    if(e.key==='ArrowLeft'&&links[0])location.href=links[0].href;
+    if(e.key==='ArrowRight'&&links[2])location.href=links[2].href;
+  });
+})();
+</script>
 </body>
 </html>

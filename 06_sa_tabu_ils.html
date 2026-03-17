@@ -82,6 +82,11 @@ tr:nth-child(even) td { background: #161820; }
 </style>
 </head>
 <body>
+<nav style="position:sticky;top:0;z-index:100;background:#0f1117;border-bottom:1px solid #2a2d3a;padding:8px 40px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+  <a href="05_minimax_alphabeta.html" style="font-family:'Cascadia Code','Fira Mono',monospace;font-size:12px;font-weight:700;color:#787880;text-decoration:none;padding:5px 12px;border:1px solid #2a2d3a;border-radius:3px;background:#161820;">← Minimax</a>
+  <a href="index.html" style="font-family:'Cascadia Code','Fira Mono',monospace;font-size:12px;font-weight:700;color:#d4d0c8;text-decoration:none;padding:5px 12px;border:1px solid #2a2d3a;border-radius:3px;background:#161820;">⌂ Index</a>
+  <a href="07_genetic_algorithms.html" style="font-family:'Cascadia Code','Fira Mono',monospace;font-size:12px;font-weight:700;color:#787880;text-decoration:none;padding:5px 12px;border:1px solid #2a2d3a;border-radius:3px;background:#161820;">Genetic Algorithms →</a>
+</nav>
 <div class="hero">
   <div class="tag">COS314 · Topic 09</div>
   <h1>Simulated Annealing<br>Tabu Search &amp; ILS</h1>
@@ -322,6 +327,24 @@ document.querySelectorAll('iframe.demo-frame').forEach(f => {
     try { this.style.height = this.contentDocument.documentElement.scrollHeight + 'px'; } catch(e) {}
   });
 });
+</script>
+<script>
+(function(){
+  const bar=document.createElement('div');
+  bar.id='progress-bar';
+  bar.style.cssText='position:fixed;top:0;left:0;height:3px;background:#b08030;width:0%;z-index:200;transition:width 0.1s linear;pointer-events:none;';
+  document.body.prepend(bar);
+  window.addEventListener('scroll',()=>{
+    const max=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(max>0?window.scrollY/max*100:0)+'%';
+  },{passive:true});
+  const links=document.querySelectorAll('nav a');
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    if(e.key==='ArrowLeft'&&links[0])location.href=links[0].href;
+    if(e.key==='ArrowRight'&&links[2])location.href=links[2].href;
+  });
+})();
 </script>
 </body>
 </html>

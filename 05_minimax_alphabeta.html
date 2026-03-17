@@ -12,6 +12,11 @@
 </style>
 </head>
 <body>
+<nav class="top-nav">
+  <a href="04_hill_climbing_astar.html">← Hill Climbing & A*</a>
+  <a class="home" href="index.html">⌂ Index</a>
+  <a href="06_sa_tabu_ils.html">SA · Tabu · ILS →</a>
+</nav>
 <div class="hero">
   <div class="tag">COS314 · Topics 07–08</div>
   <h1>Minimax Algorithm<br>&amp; Alpha-Beta Pruning</h1>
@@ -219,6 +224,23 @@ document.querySelectorAll('iframe.demo-frame').forEach(f => {
     try { this.style.height = this.contentDocument.documentElement.scrollHeight + 'px'; } catch(e) {}
   });
 });
+</script>
+<script>
+(function(){
+  const bar=document.createElement('div');
+  bar.id='progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll',()=>{
+    const max=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(max>0?window.scrollY/max*100:0)+'%';
+  },{passive:true});
+  const links=document.querySelectorAll('.top-nav a');
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    if(e.key==='ArrowLeft'&&links[0])location.href=links[0].href;
+    if(e.key==='ArrowRight'&&links[2])location.href=links[2].href;
+  });
+})();
 </script>
 </body>
 </html>
