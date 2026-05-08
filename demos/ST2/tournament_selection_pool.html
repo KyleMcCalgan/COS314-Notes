@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Selection Pool Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 18px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f1117;
+    color: #e0d8c8;
+  }
+  :root {
+    --color-border-secondary: #252830;
+    --color-border-tertiary: #1e2028;
+    --color-background-primary: #0f1117;
+    --color-background-secondary: #1c1f2b;
+    --color-text-primary: #e0d8c8;
+    --color-text-secondary: #a0988a;
+    --border-radius-md: 6px;
+    --border-radius-lg: 10px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .pool-card {
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: default;
+    transition: border-color 0.25s, background 0.25s, opacity 0.25s, transform 0.2s;
+    background: var(--color-background-primary);
+  }
+  .pool-card.selected {
+    border-color: #7F77DD;
+    background: #EEEDFE;
+    transform: scale(1.06);
+  }
+  .pool-card.winner {
+    border-color: #1D9E75;
+    background: #E1F5EE;
+    transform: scale(1.1);
+  }
+  .pool-card.dimmed { opacity: 0.25; }
+  .card-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+  .card-fitness { font-size: 12px; color: var(--color-text-secondary); }
+  .card-badge {
+    font-size: 11px; font-weight: 500; padding: 2px 7px;
+    border-radius: var(--border-radius-md); margin-top: 2px;
+  }
+  .badge-selected { background: #EEEDFE; color: #3C3489; }
+  .badge-winner { background: #E1F5EE; color: #085041; }
+  .arena-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 8px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--color-background-secondary);
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .arena-card.winner { border-color: #1D9E75; background: #E1F5EE; }
+  .step-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; letter-spacing: 0.03em; margin: 0 0 8px; }
+  .run-btn { padding: 9px 20px; border: 0.5px solid var(--color-border-secondary); background: transparent; border-radius: var(--border-radius-md); cursor: pointer; font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .run-btn:hover { background: var(--color-background-secondary); }
+  .run-btn:disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+<h2 class="sr-only">Tournament selection visualiser showing participant picking from the full population pool</h2>
+
+<div style="padding: 1rem 0;">
+
+  <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+    <label style="font-size: 14px; color: var(--color-text-secondary);">Tournament size</label>
+    <input type="range" min="1" max="10" value="4" id="tsize" step="1" style="width: 160px;" oninput="document.getElementById('tsize-out').textContent=this.value; reset();" />
+    <span id="tsize-out" style="font-size: 15px; font-weight: 500; min-width: 16px;">4</span>
+    <button class="run-btn" id="btn-pick" onclick="stepPick()">Pick contestants</button>
+    <button class="run-btn" id="btn-fight" onclick="stepFight()" disabled>Find winner</button>
+    <button class="run-btn" id="btn-reset" onclick="reset()">Reset</button>
+  </div>
+
+  <p class="step-label">Full population pool</p>
+  <div id="pool" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 24px;"></div>
+
+  <div id="arena-section" style="opacity: 0; transition: opacity 0.4s;">
+    <p class="step-label">Tournament arena — contestants only</p>
+    <div id="arena" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;"></div>
+    <div id="result-box" style="display:none; border: 0.5px solid #1D9E75; border-radius: var(--border-radius-lg); padding: 14px 18px; background: #E1F5EE;">
+      <span style="font-size: 13px; color: #0F6E56;">Winner — highest fitness in tournament</span><br>
+      <span id="result-text" style="font-size: 17px; font-weight: 500; color: #085041;"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const pop = [
+  {name:'P1',fitness:41},{name:'P2',fitness:23},{name:'P3',fitness:49},
+  {name:'P4',fitness:40},{name:'P5',fitness:4}, {name:'P6',fitness:20},
+  {name:'P7',fitness:47},{name:'P8',fitness:59},{name:'P9',fitness:21},
+  {name:'P10',fitness:42}
+];
+
+let selected = [];
+let phase = 0;
+
+function buildPool(highlightNames, winnerName) {
+  const pool = document.getElementById('pool');
+  pool.innerHTML = pop.map(p => {
+    let cls = 'pool-card';
+    let badge = '';
+    if (winnerName && p.name === winnerName) {
+      cls += ' winner';
+      badge = `<span class="card-badge badge-winner">winner</span>`;
+    } else if (highlightNames && highlightNames.includes(p.name)) {
+      cls += ' selected';
+      badge = `<span class="card-badge badge-selected">in tournament</span>`;
+    } else if (highlightNames && highlightNames.length > 0) {
+      cls += ' dimmed';
+    }
+    return `<div class="${cls}">
+      <span class="card-name">${p.name}</span>
+      <span class="card-fitness">fitness: ${p.fitness}</span>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function buildArena(contestants, winnerName) {
+  const sorted = [...contestants].sort((a,b) => b.fitness - a.fitness);
+  document.getElementById('arena').innerHTML = sorted.map(p => {
+    const isWin = p.name === winnerName;
+    return `<div class="arena-card ${isWin ? 'winner' : ''}">
+      <span style="font-size:14px;font-weight:${isWin?500:400};color:${isWin?'#085041':'var(--color-text-primary)'};">${p.name}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:${Math.round(p.fitness/59*160)}px;height:8px;border-radius:4px;background:${isWin?'#1D9E75':'#AFA9EC'};"></div>
+        <span style="font-size:13px;font-weight:500;color:${isWin?'#085041':'var(--color-text-secondary)'};">fitness ${p.fitness}</span>
+        ${isWin ? `<span class="card-badge badge-winner">winner</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function reset() {
+  selected = [];
+  phase = 0;
+  buildPool([], null);
+  document.getElementById('arena-section').style.opacity = '0';
+  document.getElementById('arena').innerHTML = '';
+  document.getElementById('result-box').style.display = 'none';
+  document.getElementById('btn-pick').disabled = false;
+  document.getElementById('btn-fight').disabled = true;
+}
+
+function stepPick() {
+  const t = parseInt(document.getElementById('tsize').value);
+  const shuffled = [...pop].sort(() => Math.random() - 0.5);
+  selected = shuffled.slice(0, t);
+  buildPool(selected.map(p => p.name), null);
+  buildArena(selected, null);
+  document.getElementById('arena-section').style.opacity = '1';
+  document.getElementById('result-box').style.display = 'none';
+  document.getElementById('btn-pick').disabled = true;
+  document.getElementById('btn-fight').disabled = false;
+}
+
+function stepFight() {
+  const winner = selected.reduce((best, p) => p.fitness > best.fitness ? p : best, selected[0]);
+  buildPool(selected.map(p => p.name), winner.name);
+  buildArena(selected, winner.name);
+  document.getElementById('result-box').style.display = 'block';
+  document.getElementById('result-text').textContent = `${winner.name} — fitness ${winner.fitness} becomes a parent`;
+  document.getElementById('btn-fight').disabled = true;
+  document.getElementById('btn-pick').disabled = false;
+}
+
+reset();
+</script>
+</body>
+</html>

@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #c38d2c; --accent2: #4aa07b; --accent3: #8b5fbf; }
   .hero::before { content: '01'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -202,6 +209,18 @@
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Selection Methods Explorer</h2>
+    <p>Use this demo to switch between tournament selection, fitness proportionate selection, and rank selection. It helps connect the formulas on the page to an actual parent-selection event.</p>
+    <iframe class="demo-frame" src="demos/ST2/selection_methods_interactive.html" title="Selection Methods Interactive Explorer" style="height: 760px"></iframe>
+  </div>
+
+  <div class="section">
+    <h2>Interactive Demo: Tournament Pool Visualiser</h2>
+    <p>This one isolates tournament selection and shows the full population, the randomly sampled contest pool, and the winning parent in a more step-by-step way.</p>
+    <iframe class="demo-frame" src="demos/ST2/tournament_selection_pool.html" title="Tournament Selection Pool Visualiser" style="height: 700px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Exam Checklist</h2>
     <ul class="checklist">
       <li class="done">Define what the method is selecting and why.</li>
@@ -215,6 +234,15 @@
   <div class="nav-hint">Semester II scope section 1 of 6</div>
 </div>
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      this.style.height = this.contentDocument.documentElement.scrollHeight + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 <script>
 (function(){
   const bar = document.createElement('div');
