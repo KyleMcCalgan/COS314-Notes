@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Ant Colony Optimisation</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #c2842f; --accent2: #3f8ab0; --accent3: #8b5a43; }
+  .hero::before { content: '04'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="03_genetic_programming.html"><- Genetic Programming</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="05_particle_swarm_optimisation.html">Particle Swarm Optimisation -></a>
+</nav>
+<div class="hero">
+  <div class="tag">COS314 | Semester II Scope</div>
+  <h1>Ant Colony Optimisation</h1>
+  <p class="subtitle">The ACO construction loop, probability rule, pheromone update equation, and the parameters that control exploration and exploitation.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Practical View</h2>
+    <p>ACO is used for constructive combinatorial optimisation. Ants build solutions step by step, and pheromone values bias future ants toward stronger components of past solutions.</p>
+    <div class="topic-pills">
+      <div class="topic-pill">Typical space: graph or construction graph</div>
+      <div class="topic-pill">Key memory: pheromone on components</div>
+      <div class="topic-pill">Main balance: alpha and beta</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Algorithm</h2>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Initialise parameters and pheromone values.</strong><p>Set initial <code>tau_ij</code> values and decide how many ants will be used.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Each ant constructs a solution.</strong><p>At every step it chooses the next feasible component using pheromone and heuristic information.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Optionally apply local search.</strong><p>The notes call these daemon actions.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Update pheromone trails.</strong><p>Evaporate old pheromone and deposit new pheromone on strong solution components.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Repeat until termination.</strong><p>Common criteria are iteration count or time budget.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Probability Rule</h2>
+    <div class="formula">p(i,j) = (tau_ij^alpha * eta_ij^beta) / sum(tau_il^alpha * eta_il^beta)</div>
+    <table>
+      <thead>
+        <tr><th>Symbol</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>tau_ij</code></td><td>Pheromone on edge or component <code>(i,j)</code></td></tr>
+        <tr><td><code>eta_ij</code></td><td>Heuristic value, often <code>1 / distance</code></td></tr>
+        <tr><td><code>alpha</code></td><td>Weight of pheromone information</td></tr>
+        <tr><td><code>beta</code></td><td>Weight of heuristic information</td></tr>
+        <tr><td><code>N(s)</code></td><td>Feasible neighbourhood from the current partial solution</td></tr>
+      </tbody>
+    </table>
+    <div class="card blue">
+      <strong>Interpretation</strong>
+      <ul>
+        <li>Higher <code>alpha</code> means stronger reliance on pheromone trails.</li>
+        <li>Higher <code>beta</code> means stronger reliance on heuristic greediness, such as short edges.</li>
+        <li>Together they control exploration versus exploitation.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Pheromone Update</h2>
+    <div class="formula">tau_ij(t + 1) = (1 - rho) * tau_ij(t) + Delta tau_ij</div>
+    <div class="formula">Delta tau_ij = sum(Delta tau_ij^k)</div>
+    <div class="formula">Delta tau_ij^k = Q / L_k if ant k used edge (i,j), otherwise 0</div>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rho</code></td><td>Evaporation rate, with <code>0 &lt; rho &lt; 1</code></td></tr>
+        <tr><td><code>Q</code></td><td>Deposit scaling constant</td></tr>
+        <tr><td><code>L_k</code></td><td>Length or cost of ant k's full solution</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">Shorter tours receive larger pheromone deposits because <code>Q / L_k</code> is bigger when <code>L_k</code> is smaller.</div>
+  </div>
+
+  <div class="section">
+    <h2>Worked Selection Example</h2>
+    <p>Suppose an ant at node A can choose AB or AC, with <code>alpha = 1</code> and <code>beta = 2</code>.</p>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Path</th><th>tau</th><th>eta</th><th>Numerator</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>AB</td><td>4</td><td>0.1</td><td><code>4^1 * 0.1^2 = 0.04</code></td></tr>
+        <tr><td>AC</td><td>2</td><td>0.5</td><td><code>2^1 * 0.5^2 = 0.50</code></td></tr>
+      </tbody>
+    </table>
+    <div class="formula">Denominator = 0.04 + 0.50 = 0.54</div>
+    <div class="formula">P(AB) = 0.04 / 0.54 = 7.4%, P(AC) = 0.50 / 0.54 = 92.6%</div>
+    <p>Even though AB has more pheromone, AC is far more likely because the heuristic term is much stronger here.</p>
+  </div>
+
+  <div class="section">
+    <h2>Parameters You Need To Know</h2>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Number of ants</td><td>Colony size and search breadth</td></tr>
+        <tr><td><code>alpha</code></td><td>Influence of pheromone</td></tr>
+        <tr><td><code>beta</code></td><td>Influence of heuristic information</td></tr>
+        <tr><td><code>rho</code></td><td>Pheromone evaporation speed</td></tr>
+        <tr><td>Pheromone intensity</td><td>How strongly deposited pheromone affects later moves</td></tr>
+        <tr><td>Heuristic definition</td><td>Usually based on inverse distance or a similar desirability measure</td></tr>
+        <tr><td>Local search strategy</td><td>Optional post-processing step for complete solutions</td></tr>
+        <tr><td>Termination criterion</td><td>Maximum iterations, time, or convergence threshold</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Tutorial-Style Route Choice Example</h2>
+    <p>Suppose an ant is at Node 1 and may move to Node 2, Node 3, or Node 4. Let <code>alpha = 1</code>, <code>beta = 2</code>, and <code>eta_ij = 1 / C_ij</code>.</p>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Path</th><th>Cost</th><th>Pheromone</th><th>Heuristic</th><th>Numerator</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1 -> 2</td><td>2</td><td>4</td><td>0.5</td><td><code>4 * 0.5^2 = 1.0</code></td></tr>
+        <tr><td>1 -> 3</td><td>5</td><td>10</td><td>0.2</td><td><code>10 * 0.2^2 = 0.4</code></td></tr>
+        <tr><td>1 -> 4</td><td>1</td><td>1</td><td>1.0</td><td><code>1 * 1.0^2 = 1.0</code></td></tr>
+      </tbody>
+    </table>
+    <div class="formula">Total = 1.0 + 0.4 + 1.0 = 2.4</div>
+    <div class="formula">P(1 -> 2) = 1.0 / 2.4 = 0.4167, P(1 -> 3) = 0.4 / 2.4 = 0.1667, P(1 -> 4) = 1.0 / 2.4 = 0.4167</div>
+    <p>This is a good example of ACO balancing two signals at once: path 1 -> 3 has the most pheromone, but its cost is worse, so it does not dominate.</p>
+  </div>
+
+  <div class="section">
+    <h2>What The Algorithm Is Really Doing</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>During construction</strong>
+        Each ant is building a candidate solution incrementally. At this stage, the algorithm is biased but still probabilistic.
+      </div>
+      <div class="card blue">
+        <strong>During update</strong>
+        The colony is learning which edges or components tend to appear in strong solutions, while evaporation prevents old information from dominating forever.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Exam Checklist</h2>
+    <ul class="checklist">
+      <li class="done">Write the probability rule and explain every symbol.</li>
+      <li class="done">Write the pheromone update rule and explain evaporation.</li>
+      <li class="done">Explain how <code>alpha</code> and <code>beta</code> affect exploration and exploitation.</li>
+      <li class="done">Carry out one probability calculation by hand.</li>
+      <li class="done">State the full outer loop of ACO in the correct order.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">Semester II scope section 4 of 6</div>
+</div>
+<script>
+(function(){
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

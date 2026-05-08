@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Grammatical Evolution</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #8c67c1; --accent2: #3d95a9; --accent3: #c1862b; }
+  .hero::before { content: '06'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="05_particle_swarm_optimisation.html"><- Particle Swarm Optimisation</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="ST1_Summary.html">Scope Summary -></a>
+</nav>
+<div class="hero">
+  <div class="tag">COS314 | Semester II Scope</div>
+  <h1>Grammatical Evolution</h1>
+  <p class="subtitle">Genotype to phenotype mapping, codons, modulo rule selection, and the full worked derivation pattern that is most likely to be tested practically.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Core Idea</h2>
+    <p>Grammatical Evolution evolves binary genomes, then maps them through a grammar to produce executable structures or expressions. The big practical difference from GP is that GE evolves a genotype string first and only then derives the phenotype through grammar rules.</p>
+  </div>
+
+  <div class="section">
+    <h2>Algorithm Flow</h2>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Create an initial population of variable-length binary strings.</strong><p>Each 8-bit block is a codon.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Map each genotype through a grammar.</strong><p>Use codon values to choose production rules.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Evaluate fitness.</strong><p>The phenotype is evaluated on the target problem.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Select, recombine, and mutate.</strong><p>Selection works like other EAs. Single-point crossover and bit mutation are the main operators.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Replace population and check termination.</strong><p>Repeat until a generation limit or objective condition is met.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Representation</h2>
+    <div class="card">
+      <strong>Genotype</strong>
+      Variable-length binary string made of codons.
+    </div>
+    <div class="card blue">
+      <strong>Codon</strong>
+      One 8-bit block in the genotype.
+    </div>
+    <div class="card purple">
+      <strong>Phenotype</strong>
+      The expression or program obtained after grammar-based derivation.
+    </div>
+    <div class="ascii">| 00000011 | 10100110 | 00000100 | 00011110 | 10101100 | 00000010 |
+    ^ each 8-bit block is one codon</div>
+  </div>
+
+  <div class="section">
+    <h2>The Key Mapping Rule</h2>
+    <div class="formula">rule index = codon decimal value % number of production rules</div>
+    <ul>
+      <li>Expand the leftmost non-terminal first.</li>
+      <li>Consume codons in order.</li>
+      <li>If the codon list ends before derivation finishes, wrap back to the start.</li>
+      <li>For a fixed grammar, the mapping is deterministic.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Worked Derivation Pattern</h2>
+    <p>The notes highlight this as the main practical section to study carefully.</p>
+    <div class="card">
+      <strong>Example setup</strong>
+      Codon decimals: <code>5, 166, 4, 30, 172, 2</code>
+    </div>
+    <div class="ascii">&lt;S&gt; ::= &lt;X&gt;&lt;W&gt;&lt;W&gt; | &lt;W&gt;&lt;X&gt;&lt;Y&gt; | &lt;X&gt;&lt;W&gt;&lt;Y&gt;
+&lt;W&gt; ::= &lt;Y&gt;&lt;X&gt; | &lt;Y&gt;&lt;Z&gt;
+&lt;X&gt; ::= 1|2|3|4|5|6|7|8|9|0
+&lt;Y&gt; ::= a|b|c|d|e|f|g|h|i|j
+&lt;Z&gt; ::= @|~|#|&amp;|%|*|)|-|(|+</div>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Expand <code>&lt;S&gt;</code>.</strong><p>There are 3 rules, so <code>5 % 3 = 2</code>. Choose rule 2: <code>&lt;X&gt;&lt;W&gt;&lt;Y&gt;</code>.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Expand the leftmost <code>&lt;X&gt;</code>.</strong><p>There are 10 rules, so <code>166 % 10 = 6</code>. Choose the symbol <code>7</code>.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Expand <code>&lt;W&gt;</code>.</strong><p>There are 2 rules, so <code>4 % 2 = 0</code>. Choose <code>&lt;Y&gt;&lt;X&gt;</code>.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Continue left to right.</strong><p>At each step, use the next codon and the same modulo rule against the current non-terminal's rule count.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Operators and Parameters</h2>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>GE detail</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Initialisation</td><td>Population size and variable-length limits are user-specified</td></tr>
+        <tr><td>Selection</td><td>Tournament and fitness proportionate selection are commonly used</td></tr>
+        <tr><td>Crossover</td><td>Usually single-point crossover on variable-length genomes</td></tr>
+        <tr><td>Crossover point</td><td>Chosen in the range <code>[1, l - 1]</code>, where <code>l</code> is the shortest parent length limit used in the operator</td></tr>
+        <tr><td>Mutation</td><td>Bit mutation flips a binary digit</td></tr>
+        <tr><td>Replacement</td><td>Generational or steady-state replacement, optionally elitism</td></tr>
+        <tr><td>Termination</td><td>Maximum generations or problem-specific objective reached</td></tr>
+        <tr><td>Grammar</td><td>Must encode domain knowledge and valid structural rules</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Tutorial-Style Boolean Mapping Example</h2>
+    <p>Suppose the grammar is:</p>
+    <div class="ascii">expr ::= expr op expr | term
+op   ::= AND | OR | XOR | NAND
+term ::= NOT var | var
+var  ::= A | B | C | 0 | 1</div>
+    <p>And the codon sequence is <code>[1101] [1010] [0111]</code>, which in decimal is <code>13, 10, 7</code>.</p>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Start with <code>expr</code>.</strong><p>There are 2 rules, so <code>13 % 2 = 1</code>. Select <code>term</code>.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Expand <code>term</code>.</strong><p>There are 2 rules, so <code>10 % 2 = 0</code>. Select <code>NOT var</code>.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Expand <code>var</code>.</strong><p>There are 5 rules, so <code>7 % 5 = 2</code>. Select <code>C</code>.</p></div>
+      </div>
+    </div>
+    <div class="formula">Final phenotype: NOT C</div>
+  </div>
+
+  <div class="section">
+    <h2>Why Wrapping And Introns Matter</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Wrapping</strong>
+        If the derivation is not finished when the codon list ends, the mapping process loops back to the start of the genome and continues consuming codons.
+      </div>
+      <div class="card blue">
+        <strong>Introns</strong>
+        If derivation finishes before all genetic material is used, the unused part is effectively inactive for that phenotype. Those unused pieces are often called introns.
+      </div>
+    </div>
+    <div class="callout">In a worked answer, it helps to state explicitly whether all codons were used, whether wrapping occurred, and whether unused codons remain.</div>
+  </div>
+
+  <div class="section">
+    <h2>What To Do In A GE Exam Question</h2>
+    <ul>
+      <li>Write the grammar and count the number of rules for the current non-terminal.</li>
+      <li>Convert each codon to decimal if the question gives binary codons.</li>
+      <li>Apply the modulo rule exactly and show the remainder each time.</li>
+      <li>Always expand the leftmost non-terminal.</li>
+      <li>Track wrapping if the codon sequence runs out before the phenotype is complete.</li>
+      <li>Finish by stating the phenotype or derived final expression clearly.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Exam Checklist</h2>
+    <ul class="checklist">
+      <li class="done">Define genotype, codon, phenotype, and grammar.</li>
+      <li class="done">Write and use the modulo mapping equation correctly.</li>
+      <li class="done">Explain leftmost derivation and wrapping.</li>
+      <li class="done">Describe why GE uses single-point crossover on variable-length genomes.</li>
+      <li class="done">Work a derivation trace step by step.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">Semester II scope section 6 of 6</div>
+</div>
+<script>
+(function(){
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

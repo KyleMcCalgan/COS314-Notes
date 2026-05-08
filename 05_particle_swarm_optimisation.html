@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Particle Swarm Optimisation</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #4c91c3; --accent2: #78a93a; --accent3: #b7683d; }
+  .hero::before { content: '05'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="04_ant_colony_optimisation.html"><- Ant Colony Optimisation</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="06_grammatical_evolution.html">Grammatical Evolution -></a>
+</nav>
+<div class="hero">
+  <div class="tag">COS314 | Semester II Scope</div>
+  <h1>Particle Swarm Optimisation</h1>
+  <p class="subtitle">Position and velocity updates, pbest and gbest, and the parameters that govern continuous optimisation in PSO.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Practical View</h2>
+    <p>PSO is a population-based metaheuristic for continuous optimisation. Each particle stores a position, a velocity, its own best known position, and the best known position of the swarm.</p>
+    <div class="topic-pills">
+      <div class="topic-pill">Search space: continuous</div>
+      <div class="topic-pill">Memory: pbest and gbest</div>
+      <div class="topic-pill">Main equations: velocity and position</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Algorithm</h2>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Initialise positions, velocities, and personal bests.</strong><p>Each particle starts with some <code>x_i</code>, <code>v_i</code>, and initial <code>pbest_i</code>.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Evaluate fitness.</strong><p>For minimisation, lower fitness values are better.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Update personal bests.</strong><p>If the current position beats a particle's old best, store the new one.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Update the global best.</strong><p>If any particle beats the swarm best, store it as <code>gbest</code>.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Update velocity and then position.</strong><p>Use the two standard equations.</p></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-content"><strong>Repeat until termination.</strong><p>Stop after a maximum number of iterations or once improvement stalls.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Particle Components</h2>
+    <table>
+      <thead>
+        <tr><th>Component</th><th>Symbol</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Position</td><td><code>x_i</code></td><td>The current candidate solution</td></tr>
+        <tr><td>Velocity</td><td><code>v_i</code></td><td>The step size and direction for movement</td></tr>
+        <tr><td>Personal best</td><td><code>pbest_i</code></td><td>Best position this particle has found so far</td></tr>
+        <tr><td>Global best</td><td><code>gbest</code></td><td>Best position found by the swarm</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Velocity Update Equation</h2>
+    <div class="formula">v_i(t+1) = w * v_i(t) + l1 * r1 * (pbest_i - x_i) + l2 * r2 * (gbest - x_i)</div>
+    <table>
+      <thead>
+        <tr><th>Term</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>w * v_i(t)</code></td><td>Inertia term that keeps some momentum from the previous move</td></tr>
+        <tr><td><code>l1 * r1 * (pbest_i - x_i)</code></td><td>Cognitive term that pulls the particle toward its own best solution</td></tr>
+        <tr><td><code>l2 * r2 * (gbest - x_i)</code></td><td>Social term that pulls the particle toward the swarm's best solution</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Position Update Equation</h2>
+    <div class="formula">x_i(t+1) = x_i(t) + v_i(t+1)</div>
+    <p>The new position is just the old position plus the new velocity. In practice, exam questions often ask you to compute one full iteration using the velocity equation first and then the position equation second.</p>
+  </div>
+
+  <div class="section">
+    <h2>Worked Calculation Pattern</h2>
+    <p>Even when the exact numbers change, your answer structure should stay the same:</p>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Write current values.</strong><p>List <code>x_i(t)</code>, <code>v_i(t)</code>, <code>pbest_i</code>, <code>gbest</code>, <code>w</code>, <code>l1</code>, <code>l2</code>, <code>r1</code>, and <code>r2</code>.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Compute the inertia term.</strong><p>Multiply the current velocity by <code>w</code>.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Compute the cognitive term.</strong><p>Calculate how far the particle is from <code>pbest_i</code>.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Compute the social term.</strong><p>Calculate how far the particle is from <code>gbest</code>.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Add the three pieces to get <code>v_i(t+1)</code>.</strong><p>Then plug that value into the position update equation.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Parameters You Should Be Ready To Explain</h2>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Swarm size</td><td>Number of particles exploring the space</td></tr>
+        <tr><td><code>Vmax</code></td><td>Maximum velocity limit to stop particles overshooting too aggressively</td></tr>
+        <tr><td>Inertia weight <code>w</code></td><td>Balances momentum against change of direction</td></tr>
+        <tr><td>Cognitive factor <code>l1</code></td><td>Strength of attraction to personal best</td></tr>
+        <tr><td>Social factor <code>l2</code></td><td>Strength of attraction to global best</td></tr>
+        <tr><td>Random values <code>r1, r2</code></td><td>Add stochasticity to the search</td></tr>
+        <tr><td>Termination criterion</td><td>Stops the run after enough iterations or insufficient improvement</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">The exploration versus exploitation balance comes mainly from the interaction of <code>w</code>, <code>l1</code>, and <code>l2</code>.</div>
+  </div>
+
+  <div class="section">
+    <h2>Full Numerical Demonstration</h2>
+    <p>Use the following values for one particle in a 1D minimisation problem:</p>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Value</th><th>Setting</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>x_t</code></td><td>10</td></tr>
+        <tr><td><code>v_t</code></td><td>2</td></tr>
+        <tr><td><code>pbest</code></td><td>5</td></tr>
+        <tr><td><code>gbest</code></td><td>12</td></tr>
+        <tr><td><code>w</code></td><td>0.8</td></tr>
+        <tr><td><code>l1</code></td><td>2.0</td></tr>
+        <tr><td><code>l2</code></td><td>2.0</td></tr>
+        <tr><td><code>r1, r2</code></td><td>0.5 and 0.3</td></tr>
+      </tbody>
+    </table>
+    <div class="ascii">v(t+1) = w*v(t) + l1*r1*(pbest - x) + l2*r2*(gbest - x)
+       = 0.8*2 + 2.0*0.5*(5 - 10) + 2.0*0.3*(12 - 10)
+       = 1.6 + 1.0*(-5) + 0.6*(2)
+       = 1.6 - 5.0 + 1.2
+       = -2.2
+
+x(t+1) = x(t) + v(t+1)
+       = 10 + (-2.2)
+       = 7.8</div>
+    <p>The negative new velocity means the particle moves left from 10 to 7.8.</p>
+  </div>
+
+  <div class="section">
+    <h2>How To Interpret The Numbers</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Why did the particle move left?</strong>
+        Its personal best at 5 is much better than its current position 10, so the cognitive pull is strongly negative.
+      </div>
+      <div class="card blue">
+        <strong>Why did it not jump all the way to 5 or 12?</strong>
+        PSO does not teleport. It updates velocity first, then moves by that velocity, so the motion is gradual and history-sensitive.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Exam Checklist</h2>
+    <ul class="checklist">
+      <li class="done">State what each particle stores.</li>
+      <li class="done">Write the velocity and position equations correctly.</li>
+      <li class="done">Explain the inertia, cognitive, and social terms.</li>
+      <li class="done">Know that the standard notes present the algorithm for minimisation.</li>
+      <li class="done">Be able to perform one iteration numerically if values are supplied.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">Semester II scope section 5 of 6</div>
+</div>
+<script>
+(function(){
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

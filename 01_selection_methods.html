@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Selection Methods</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #c38d2c; --accent2: #4aa07b; --accent3: #8b5fbf; }
+  .hero::before { content: '01'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="index.html"><- Index</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="02_genetic_algorithms.html">Genetic Algorithms -></a>
+</nav>
+<div class="hero">
+  <div class="tag">COS314 | Semester II Scope</div>
+  <h1>Selection Methods in Evolutionary Algorithms</h1>
+  <p class="subtitle">Tournament selection, fitness proportionate selection, and rank selection with worked calculations and parameter effects.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Scope Focus</h2>
+    <p>This section is explicitly listed in the test scope. In practice, selection is the step that chooses parents from the current population. The key theme is selection pressure: fitter individuals should be favoured, but weaker individuals should usually still have some chance so that diversity is not lost too early.</p>
+    <div class="topic-pills">
+      <div class="topic-pill">Input: current population + fitness</div>
+      <div class="topic-pill">Output: selected parent(s)</div>
+      <div class="topic-pill">Main tradeoff: pressure vs diversity</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Shared Procedure</h2>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Start with a population and fitness values.</strong><p>You cannot apply any of these methods unless each candidate already has a fitness value.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Apply one selection rule.</strong><p>The rule decides how strongly good individuals are favoured.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Choose enough parents for crossover or reproduction.</strong><p>Repeat the method until the required number of parents has been selected.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Worked Population</h2>
+    <p>The notes use this kind of population table. It works well for exam calculations because you can reuse the same data across all three methods.</p>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Individual</th><th>Chromosome</th><th>Fitness</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0</td><td>101010</td><td>42</td></tr>
+        <tr><td>1</td><td>101001</td><td>41</td></tr>
+        <tr><td>2</td><td>010111</td><td>23</td></tr>
+        <tr><td>3</td><td>110001</td><td>49</td></tr>
+        <tr><td>4</td><td>101000</td><td>40</td></tr>
+        <tr><td>5</td><td>000100</td><td>4</td></tr>
+        <tr><td>6</td><td>010100</td><td>20</td></tr>
+        <tr><td>7</td><td>101111</td><td>47</td></tr>
+        <tr><td>8</td><td>111011</td><td>59</td></tr>
+        <tr><td>9</td><td>010101</td><td>21</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Tournament Selection</h2>
+    <div class="card">
+      <strong>Definition</strong>
+      Randomly choose <code>t</code> individuals, compare their fitness values, and select the fittest one as the parent.
+    </div>
+    <div class="formula">Key parameter: tournament size t</div>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Randomly sample t individuals.</strong><p>Example: choose individuals 1, 5, 6, and 0.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Compare their fitness values.</strong><p>Fitness values are 41, 4, 20, and 42.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Select the best one.</strong><p>Individual 0 wins because 42 is the largest fitness in that set.</p></div>
+      </div>
+    </div>
+    <div class="card blue">
+      <strong>Parameter effect</strong>
+      <ul>
+        <li><code>t = 1</code> means completely random selection.</li>
+        <li><code>t = population size</code> always selects the global best individual.</li>
+        <li>Larger <code>t</code> increases selection pressure and risk of premature convergence.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Fitness Proportionate Selection</h2>
+    <div class="card">
+      <strong>Definition</strong>
+      Each individual's selection probability is proportional to its raw fitness value. This is the roulette wheel idea.
+    </div>
+    <div class="formula">P(i) = fitness(i) / total fitness</div>
+    <p>Using the worked population above, the total fitness is:</p>
+    <div class="formula">42 + 41 + 23 + 49 + 40 + 4 + 20 + 47 + 59 + 21 = 346</div>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Individual</th><th>Fitness</th><th>Probability</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>8</td><td>59</td><td>59 / 346 = 17.05%</td></tr>
+        <tr><td>5</td><td>4</td><td>4 / 346 = 1.16%</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">If one chromosome has a much larger fitness than the rest, roulette wheel selection can become too aggressive and can dominate the mating pool.</div>
+  </div>
+
+  <div class="section">
+    <h2>Rank Selection</h2>
+    <div class="card">
+      <strong>Definition</strong>
+      Sort individuals from worst to best, assign ranks, then use the ranks instead of raw fitness values to compute probabilities.
+    </div>
+    <p>Sorted fitness values: 4, 20, 21, 23, 40, 41, 42, 47, 49, 59</p>
+    <p>Assigned ranks: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10</p>
+    <div class="formula">Total rank sum = 1 + 2 + ... + 10 = 55</div>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Case</th><th>Probability</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Best ranked individual</td><td>10 / 55 = 18.18%</td></tr>
+        <tr><td>Worst ranked individual</td><td>1 / 55 = 1.82%</td></tr>
+      </tbody>
+    </table>
+    <div class="card purple">
+      <strong>Why use it?</strong>
+      Rank selection controls dominance better than roulette wheel selection because it ignores the raw magnitude gaps between fitness values.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Comparison You Should Know</h2>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>What it uses</th><th>Main parameter</th><th>Main risk</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tournament</td><td>Best of a random sample</td><td>Tournament size <code>t</code></td><td>High <code>t</code> causes premature convergence</td></tr>
+        <tr><td>Fitness proportionate</td><td>Raw fitness values</td><td>No special structural parameter, but depends on scaling of fitness</td><td>Dominance by one very fit individual</td></tr>
+        <tr><td>Rank</td><td>Sorted ranks</td><td>Ranking scheme</td><td>Loses actual fitness magnitude information</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>How To Execute A Selection Question</h2>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Read the optimisation direction first.</strong><p>If the question is a maximisation problem, larger fitness is better. If it is a minimisation problem, the fitness values may need to be transformed before using roulette wheel style selection.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Write a clean population table.</strong><p>Always include individual id, chromosome, and fitness so you can reuse the same table across tournament, rank, and roulette wheel questions.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Apply the method exactly once per parent.</strong><p>For tournament, sample and compare. For roulette wheel, compute total fitness and probabilities. For rank, sort first and then assign ranks.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Interpret the result.</strong><p>Do not stop at the arithmetic. State what the method implies for diversity, pressure, and risk of premature convergence.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Mini Demonstration: Two Parent Picks</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Tournament, size 4</strong>
+        Parent 1 sample: 1, 5, 6, 0 -> choose individual 0 with fitness 42.<br>
+        Parent 2 sample: 5, 3, 7, 8 -> choose individual 8 with fitness 59.
+      </div>
+      <div class="card blue">
+        <strong>Rank intuition</strong>
+        If the best raw fitness is much larger than all others, rank selection softens that dominance because it only moves the candidate one rank above its nearest competitor, not by the full raw fitness gap.
+      </div>
+    </div>
+    <div class="callout">A good exam answer usually ends with a sentence like: "This method selects parent X because it has the highest tournament fitness" or "This method gives candidate Y the highest probability because it has the largest relative share."</div>
+  </div>
+
+  <div class="section">
+    <h2>Exam Checklist</h2>
+    <ul class="checklist">
+      <li class="done">Define what the method is selecting and why.</li>
+      <li class="done">State the exact probability formula for roulette wheel selection.</li>
+      <li class="done">Explain how tournament size changes selection pressure.</li>
+      <li class="done">Explain why rank selection reduces premature convergence risk.</li>
+      <li class="done">Show calculations cleanly when given a population table.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">Semester II scope section 1 of 6</div>
+</div>
+<script>
+(function(){
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

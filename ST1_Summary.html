@@ -3,305 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COS314 | ST1 Summary</title>
+<title>COS314 | Semester II Scope Summary</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-  :root { --accent: #c8a84a; --accent2: #4080a8; --accent3: #6838b0; }
-  .hero::before { content: 'ST1'; }
+  :root { --accent: #c8a84a; --accent2: #4080a8; --accent3: #6b57b4; }
+  .hero::before { content: 'S2'; }
 </style>
 </head>
 <body>
 <nav class="top-nav">
-  <a href="07_genetic_algorithms.html">← Genetic Algorithms</a>
-  <a class="home" href="index.html">⌂ Index</a>
-  <a href="index.html">Home →</a>
+  <a href="06_grammatical_evolution.html"><- Grammatical Evolution</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="index.html">Index -></a>
 </nav>
 <div class="hero">
-  <div class="tag">COS314 · Semester Test 1 Summary</div>
-  <h1>ST1 Summary</h1>
-  <p class="subtitle">Everything in one place — theory + algorithms</p>
+  <div class="tag">COS314 | Semester II Scope Summary</div>
+  <h1>Scope Cross Reference</h1>
+  <p class="subtitle">A compact page to check that the uploaded test scope is fully covered and to point you toward the most practical content first.</p>
 </div>
 
 <div class="content">
-
-  <!-- ======================== THEORY ======================== -->
   <div class="section">
-    <h2>Theory 1 — Problem Representation</h2>
-    <p>AI problems are modelled as a <strong>state space</strong>: a graph/tree of all possible states reachable from a start state via operators.</p>
-    <div class="grid2">
-      <div class="card">
-        <strong>State Space = 4 things</strong>
-        <ul>
-          <li>Initial state</li>
-          <li>Operators / successor function</li>
-          <li>Goal test</li>
-          <li>Path cost</li>
-        </ul>
-      </div>
-      <div class="card blue">
-        <strong>Graph vs Tree</strong>
-        <ul>
-          <li>Graph — nodes can be revisited (use CLOSED list)</li>
-          <li>Tree — no revisits, simpler but can loop</li>
-        </ul>
-      </div>
-    </div>
-    <div class="callout">Problem classification: <strong>single-state</strong> (fully observable), <strong>multi-state</strong> (partial), <strong>contingency</strong> (non-deterministic), <strong>exploration</strong> (unknown environment).</div>
-  </div>
-
-  <div class="section">
-    <h2>Theory 2 — Heuristics</h2>
-    <p>A <strong>heuristic h(n)</strong> estimates the cost from node n to the goal. It guides informed search — the better the heuristic, the less you explore.</p>
-    <div class="grid2">
-      <div class="card">
-        <strong>Key Properties</strong>
-        <ul>
-          <li><strong>Admissible</strong> — never overestimates (h(n) ≤ true cost). Required for A* optimality.</li>
-          <li><strong>Consistent / Monotone</strong> — h(n) ≤ cost(n→n') + h(n'). Implies admissible.</li>
-          <li>h = 0 at goal</li>
-        </ul>
-      </div>
-      <div class="card blue">
-        <strong>8-Puzzle Heuristics</strong>
-        <ul>
-          <li>h1 — number of misplaced tiles</li>
-          <li>h2 — sum of Manhattan distances</li>
-          <li>h2 dominates h1 (always ≥ h1), so prefer h2</li>
-        </ul>
-      </div>
-    </div>
-    <div class="callout blue">Weak heuristic (h≈0) → lots of search. Strong heuristic → near-direct path. Inadmissible heuristic → fast but not guaranteed optimal.</div>
-  </div>
-
-  <hr class="sep">
-
-  <!-- ======================== UNINFORMED SEARCH ======================== -->
-  <div class="section">
-    <h2>Algorithms — Uninformed Search</h2>
-    <p>No heuristic. Explore blindly using structure of OPEN list only.</p>
-
+    <h2>Image Scope -> Site Structure</h2>
     <table>
       <thead>
-        <tr>
-          <th>Algorithm</th>
-          <th>OPEN structure</th>
-          <th>Complete?</th>
-          <th>Optimal?</th>
-          <th>Time</th>
-          <th>Space</th>
-        </tr>
+        <tr><th>Scope item from image</th><th>HTML page</th><th>Most practical focus inside that page</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td><strong>DFS</strong></td>
-          <td>Stack — children added to <strong>LEFT</strong></td>
-          <td>No (may loop)</td>
-          <td>No</td>
-          <td>O(b<sup>m</sup>)</td>
-          <td>O(bm)</td>
-        </tr>
-        <tr>
-          <td><strong>BFS</strong></td>
-          <td>Queue — children added to <strong>RIGHT</strong></td>
-          <td>Yes</td>
-          <td>Yes (unit cost)</td>
-          <td>O(b<sup>d</sup>)</td>
-          <td>O(b<sup>d</sup>)</td>
-        </tr>
-        <tr>
-          <td><strong>DFID</strong></td>
-          <td>DFS with increasing depth limit</td>
-          <td>Yes</td>
-          <td>Yes (unit cost)</td>
-          <td>O(b<sup>d</sup>)</td>
-          <td>O(bd)</td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="callout">DFS vs BFS: literally one line difference — LEFT (DFS) vs RIGHT (BFS). DFID = best of both: BFS-complete + DFS-space.</div>
-  </div>
-
-  <!-- ======================== INFORMED SEARCH ======================== -->
-  <div class="section">
-    <h2>Algorithms — Informed Search</h2>
-
-    <h3>Hill Climbing</h3>
-    <div class="card">
-      <strong>Idea</strong>
-      Always move to the best neighbouring state. No backtracking, no OPEN list history.
-    </div>
-    <ul>
-      <li>Uses only h(n) — greedy local move</li>
-      <li>Fast but gets stuck in <strong>local maxima</strong>, plateaus, ridges</li>
-      <li>Not complete, not optimal</li>
-    </ul>
-
-    <h3>Best First Search (Greedy)</h3>
-    <ul>
-      <li>Expands node with smallest <strong>h(n)</strong> — pure heuristic, ignores path cost</li>
-      <li>Not optimal — can find long paths</li>
-    </ul>
-
-    <h3>A* Algorithm</h3>
-    <div class="formula">f(n) = g(n) + h(n)</div>
-    <ul>
-      <li><strong>g(n)</strong> = actual cost from start to n</li>
-      <li><strong>h(n)</strong> = estimated cost from n to goal</li>
-      <li>Optimal & complete if h is <strong>admissible</strong></li>
-      <li>Expands nodes in order of f(n) — best first on f, not just h</li>
-    </ul>
-    <div class="callout">A = Best First + path cost. A* = A with admissible heuristic. If h=0, A* degenerates to uniform cost search (Dijkstra).</div>
-  </div>
-
-  <!-- ======================== ADVERSARIAL SEARCH ======================== -->
-  <div class="section">
-    <h2>Algorithms — Adversarial Search (Games)</h2>
-
-    <h3>Minimax</h3>
-    <div class="card">
-      <strong>Idea</strong>
-      MAX player picks the move with the highest value. MIN player picks the move with the lowest value. Alternate at each level.
-    </div>
-    <ul>
-      <li>Assumes opponent plays optimally</li>
-      <li>Complete (finite game tree), optimal vs optimal opponent</li>
-      <li>Time: O(b<sup>m</sup>) — explores entire tree</li>
-    </ul>
-
-    <h3>Alpha-Beta Pruning</h3>
-    <div class="ab-rule" style="margin:12px 0">
-      <div class="ab-formula">Prune when β ≤ α</div>
-      <div class="ab-sub">α = best MAX has found so far &nbsp;·&nbsp; β = best MIN has found so far</div>
-    </div>
-    <ul>
-      <li>Same result as Minimax — just skips provably irrelevant branches</li>
-      <li>Best case: O(b<sup>m/2</sup>) — effectively doubles search depth</li>
-      <li>Prune at <strong>MIN node</strong>: if node value ≤ α → cut. &nbsp; Prune at <strong>MAX node</strong>: if node value ≥ β → cut.</li>
-    </ul>
-    <div class="callout purple">Alpha-Beta never changes the Minimax result — it only prunes. The more ordered the moves, the more pruning occurs.</div>
-  </div>
-
-  <!-- ======================== LOCAL / METAHEURISTICS ======================== -->
-  <div class="section">
-    <h2>Algorithms — Local Search & Metaheuristics</h2>
-    <p>Used when the <em>path doesn't matter</em>, only the final solution quality. Work by iteratively improving a single (or small set of) solution(s).</p>
-
-    <h3>Simulated Annealing (SA)</h3>
-    <div class="card">
-      <strong>Idea</strong>
-      Like Hill Climbing but sometimes accepts worse moves — probability of acceptance decreases as temperature T cools.
-    </div>
-    <ul>
-      <li>Accept worse move with probability e<sup>−ΔE/T</sup></li>
-      <li>High T → exploratory. Low T → exploitative (like Hill Climbing)</li>
-      <li>Can escape local optima. Theoretically finds global optimum given slow enough cooling</li>
-    </ul>
-
-    <h3>Tabu Search</h3>
-    <div class="card blue">
-      <strong>Idea</strong>
-      Hill Climbing + a <strong>tabu list</strong> that bans recently visited moves/states to force exploration.
-    </div>
-    <ul>
-      <li>Always moves to best non-tabu neighbour (even if worse)</li>
-      <li>Tabu list has fixed size — oldest entries expire</li>
-      <li><strong>Aspiration criterion</strong>: override tabu if the move produces a new global best</li>
-    </ul>
-
-    <h3>Iterated Local Search (ILS)</h3>
-    <div class="card purple">
-      <strong>Idea</strong>
-      Run local search → perturb the solution → run local search again. Repeat.
-    </div>
-    <ul>
-      <li>Perturbation must be strong enough to escape the current basin but not so strong it randomises</li>
-      <li>Acceptance criterion decides whether to keep new solution or revert</li>
-    </ul>
-
-    <table>
-      <thead>
-        <tr><th>Algorithm</th><th>Escape local optima?</th><th>Memory</th><th>Key parameter</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>SA</td><td>Yes — probabilistic</td><td>None</td><td>Temperature schedule</td></tr>
-        <tr><td>Tabu</td><td>Yes — forced moves</td><td>Tabu list</td><td>Tabu tenure (list size)</td></tr>
-        <tr><td>ILS</td><td>Yes — perturbation</td><td>Incumbent solution</td><td>Perturbation strength</td></tr>
+        <tr><td>Selection Methods in EAs</td><td><a href="01_selection_methods.html">01_selection_methods.html</a></td><td>Tournament steps, roulette wheel probabilities, rank probabilities, pressure effects</td></tr>
+        <tr><td>Genetic Algorithms</td><td><a href="02_genetic_algorithms.html">02_genetic_algorithms.html</a></td><td>GA loop, one-point crossover, bit-flip mutation, replacement, parameter list</td></tr>
+        <tr><td>Genetic Programming</td><td><a href="03_genetic_programming.html">03_genetic_programming.html</a></td><td>Syntax-tree representation, subtree crossover, grow/shrink mutation, depth limits</td></tr>
+        <tr><td>Ant Colony Optimisation</td><td><a href="04_ant_colony_optimisation.html">04_ant_colony_optimisation.html</a></td><td>Probability formula, pheromone update formula, worked probability calculation</td></tr>
+        <tr><td>Particle Swarm Optimisation</td><td><a href="05_particle_swarm_optimisation.html">05_particle_swarm_optimisation.html</a></td><td>Velocity and position equations, pbest/gbest, parameter meanings</td></tr>
+        <tr><td>Grammatical Evolution</td><td><a href="06_grammatical_evolution.html">06_grammatical_evolution.html</a></td><td>Modulo mapping, leftmost derivation, wrapping, single-point crossover on codons</td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- ======================== GENETIC ALGORITHMS ======================== -->
   <div class="section">
-    <h2>Algorithms — Genetic Algorithms (GA)</h2>
-    <p>Population-based search inspired by evolution. Maintains a <strong>population of candidate solutions</strong> (chromosomes) and evolves them over generations.</p>
-
-    <div class="pipeline">
-      <div class="pipe-step"><div class="pipe-box"><div class="num">01</div><div class="name">Encoding</div><div class="desc">Represent solutions as chromosomes (binary, integer, permutation...)</div></div></div>
-      <div class="pipe-step"><div class="pipe-arrow">↓</div></div>
-      <div class="pipe-step"><div class="pipe-box"><div class="num">02</div><div class="name">Fitness Evaluation</div><div class="desc">Score each chromosome — higher fitness = better solution</div></div></div>
-      <div class="pipe-step"><div class="pipe-arrow">↓</div></div>
-      <div class="pipe-step"><div class="pipe-box"><div class="num">03</div><div class="name">Selection</div><div class="desc">Favour fitter individuals — roulette wheel, tournament, rank-based</div></div></div>
-      <div class="pipe-step"><div class="pipe-arrow">↓</div></div>
-      <div class="pipe-step"><div class="pipe-box"><div class="num">04</div><div class="name">Crossover</div><div class="desc">Combine two parents to produce offspring (single-point, two-point, uniform)</div></div></div>
-      <div class="pipe-step"><div class="pipe-arrow">↓</div></div>
-      <div class="pipe-step"><div class="pipe-box"><div class="num">05</div><div class="name">Mutation</div><div class="desc">Small random change — maintains diversity, prevents premature convergence</div></div></div>
-      <div class="pipe-step"><div class="pipe-arrow">↓</div></div>
-      <div class="pipe-step"><div class="pipe-box"><div class="num">06</div><div class="name">Replacement → Repeat</div><div class="desc">New generation replaces old. Repeat until termination condition met.</div></div></div>
+    <h2>What Was Prioritised From The Markdown Notes</h2>
+    <div class="toc-grid">
+      <div class="mini-card">
+        <h4>Algorithms first</h4>
+        <p>Each page is organised around the actual run order or calculation pattern rather than long background theory.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Parameters included</h4>
+        <p>Alpha, beta, rho, population size, p_c, p_m, w, l1, l2, Vmax, depth limits, and more are called out explicitly.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Worked steps included</h4>
+        <p>Selection probabilities, crossover traces, GE modulo mapping, and ACO probability examples are all surfaced.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Theory still present</h4>
+        <p>Short theory summaries are included, but they are intentionally kept behind the practical content.</p>
+      </div>
     </div>
-
-    <div class="callout purple">Crossover is the primary search operator. Mutation is secondary — too much mutation = random search. Too little = premature convergence.</div>
   </div>
 
-  <!-- ======================== MASTER CHEAT SHEET ======================== -->
   <div class="section">
-    <h2>Quick Reference — All Algorithms</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Algorithm</th>
-          <th>Category</th>
-          <th>Uses Heuristic?</th>
-          <th>Complete?</th>
-          <th>Optimal?</th>
-          <th>Key Idea</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>DFS</td><td>Uninformed</td><td>No</td><td>No</td><td>No</td><td>Stack — go deep first</td></tr>
-        <tr><td>BFS</td><td>Uninformed</td><td>No</td><td>Yes</td><td>Yes*</td><td>Queue — level by level</td></tr>
-        <tr><td>DFID</td><td>Uninformed</td><td>No</td><td>Yes</td><td>Yes*</td><td>DFS with growing depth limit</td></tr>
-        <tr><td>Hill Climbing</td><td>Informed / Local</td><td>Yes (h)</td><td>No</td><td>No</td><td>Always move to best neighbour</td></tr>
-        <tr><td>Best First</td><td>Informed</td><td>Yes (h)</td><td>No</td><td>No</td><td>Expand min h(n)</td></tr>
-        <tr><td>A*</td><td>Informed</td><td>Yes (h)</td><td>Yes</td><td>Yes†</td><td>Expand min f=g+h</td></tr>
-        <tr><td>Minimax</td><td>Adversarial</td><td>Optional</td><td>Yes</td><td>Yes</td><td>MAX/MIN alternating</td></tr>
-        <tr><td>Alpha-Beta</td><td>Adversarial</td><td>Optional</td><td>Yes</td><td>Yes</td><td>Minimax + pruning</td></tr>
-        <tr><td>Simulated Annealing</td><td>Metaheuristic</td><td>No</td><td>Probabilistic</td><td>Probabilistic</td><td>Accept bad moves with prob e<sup>−ΔE/T</sup></td></tr>
-        <tr><td>Tabu Search</td><td>Metaheuristic</td><td>No</td><td>No</td><td>No</td><td>Tabu list prevents revisits</td></tr>
-        <tr><td>ILS</td><td>Metaheuristic</td><td>No</td><td>No</td><td>No</td><td>Local search + perturbation</td></tr>
-        <tr><td>Genetic Algorithm</td><td>Evolutionary</td><td>No</td><td>No</td><td>No</td><td>Evolve population via crossover & mutation</td></tr>
-      </tbody>
-    </table>
-    <p style="font-size:12px;color:var(--muted);">* unit cost &nbsp;·&nbsp; † admissible heuristic required</p>
+    <h2>Fast Revision Order</h2>
+    <ol>
+      <li>Start with <a href="01_selection_methods.html">Selection Methods</a> because those ideas appear again inside GA, GP, and GE.</li>
+      <li>Move to <a href="02_genetic_algorithms.html">Genetic Algorithms</a> and <a href="03_genetic_programming.html">Genetic Programming</a> for the core EA mechanics.</li>
+      <li>Then revise <a href="06_grammatical_evolution.html">Grammatical Evolution</a> because the mapping procedure is highly procedural and easy to test.</li>
+      <li>Finish with <a href="04_ant_colony_optimisation.html">ACO</a> and <a href="05_particle_swarm_optimisation.html">PSO</a> for formulas and parameter interpretation.</li>
+    </ol>
   </div>
 
-  <div class="nav-hint">COS314 · ST1 Summary &nbsp;·&nbsp; Good luck!</div>
+  <div class="section">
+    <h2>Coverage Check</h2>
+    <ul class="checklist">
+      <li class="done">Selection Methods in EAs: covered</li>
+      <li class="done">Genetic Algorithms: covered</li>
+      <li class="done">Genetic Programming: covered</li>
+      <li class="done">Ant Colony Optimisation: covered</li>
+      <li class="done">Particle Swarm Optimisation: covered</li>
+      <li class="done">Grammatical Evolution: covered</li>
+    </ul>
+  </div>
 
+  <div class="nav-hint">Semester II test scope fully mapped into the study pack</div>
 </div>
 <script>
 (function(){
-  const bar=document.createElement('div');
-  bar.id='progress-bar';
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
   document.body.prepend(bar);
-  window.addEventListener('scroll',()=>{
-    const max=document.documentElement.scrollHeight-window.innerHeight;
-    bar.style.width=(max>0?window.scrollY/max*100:0)+'%';
-  },{passive:true});
-  const links=document.querySelectorAll('.top-nav a');
-  document.addEventListener('keydown',e=>{
-    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
-    if(e.key==='ArrowLeft'&&links[0])location.href=links[0].href;
-    if(e.key==='ArrowRight'&&links[2])location.href=links[2].href;
-  });
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
 })();
 </script>
 </body>

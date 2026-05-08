@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Genetic Algorithms</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #2ea66f; --accent2: #b84a69; --accent3: #bf8731; }
+  .hero::before { content: '02'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="01_selection_methods.html"><- Selection Methods</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="03_genetic_programming.html">Genetic Programming -></a>
+</nav>
+<div class="hero">
+  <div class="tag">COS314 | Semester II Scope</div>
+  <h1>Genetic Algorithms</h1>
+  <p class="subtitle">A practical walk-through of the GA cycle, operators, parameters, and worked binary examples.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Core Idea</h2>
+    <p>A Genetic Algorithm is a population-based metaheuristic. Instead of improving one solution at a time, it maintains a whole population of candidate solutions and evolves them over generations.</p>
+    <div class="topic-pills">
+      <div class="topic-pill">Representation: chromosome</div>
+      <div class="topic-pill">Search style: population based</div>
+      <div class="topic-pill">Main operators: selection, crossover, mutation</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Algorithm Flow</h2>
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-box"><div class="num">01</div><div class="name">Encode solutions</div><div class="desc">Choose binary, integer, real, permutation, or another valid representation.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">02</div><div class="name">Generate initial population</div><div class="desc">Create N chromosomes randomly or with problem-specific seeding.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">03</div><div class="name">Evaluate fitness</div><div class="desc">Assign a fitness value to every chromosome.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">04</div><div class="name">Select parents</div><div class="desc">Use tournament, fitness proportionate, or rank selection.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">05</div><div class="name">Apply crossover</div><div class="desc">Primary search operator. Usually used at a high rate.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">06</div><div class="name">Apply mutation</div><div class="desc">Secondary operator. Used at a lower rate to preserve diversity.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">07</div><div class="name">Replace population</div><div class="desc">Use generational replacement, steady-state replacement, or elitism.</div></div></div>
+      <div class="pipe-step"><div class="pipe-arrow">v</div></div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">08</div><div class="name">Check termination</div><div class="desc">Stop if the target condition has been reached; otherwise repeat.</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Representation and Fitness</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Representation</strong>
+        <ul>
+          <li>Binary encoding is the standard classroom example.</li>
+          <li>Each gene stores one component of the solution.</li>
+          <li>The encoding must match the problem constraints.</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <strong>Fitness</strong>
+        <ul>
+          <li>Problem-specific and fixed before the run.</li>
+          <li>Must reflect solution quality clearly.</li>
+          <li>Used by selection to bias reproduction.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chromosome">
+      <div class="gene g1">1</div><div class="gene g0">1</div><div class="gene g1">1</div><div class="gene g0">0</div><div class="gene g1">1</div><div class="gene g0">1</div>
+    </div>
+    <p class="muted-note">Example chromosome: a 6-bit binary encoding.</p>
+  </div>
+
+  <div class="section">
+    <h2>Crossover</h2>
+    <div class="card">
+      <strong>Main idea</strong>
+      Crossover combines two parents to produce offspring. In GA notes it is the primary operator, so its application rate is usually high.
+    </div>
+    <div class="formula">Apply crossover if r &lt; p_c</div>
+    <div class="ascii">Parent 1: 1 1 1 | 0 1 1
+Parent 2: 1 0 1 | 0 1 0
+            ^
+          split point
+
+Offspring 1: 1 1 1 | 0 1 0
+Offspring 2: 1 0 1 | 0 1 1</div>
+    <ul>
+      <li>One-point crossover swaps the tails after one cut point.</li>
+      <li>Two-point crossover swaps the middle segment between two cuts.</li>
+      <li>Uniform crossover decides each gene position separately.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Mutation</h2>
+    <div class="card purple">
+      <strong>Main idea</strong>
+      Mutation introduces diversity and helps prevent premature convergence. It is secondary, so the rate is usually lower than crossover.
+    </div>
+    <div class="formula">For each gene, mutate if r &lt; p_m</div>
+    <div class="ascii">Before: 1 1 1 0 1 0
+               ^
+After:  1 1 1 1 1 0</div>
+    <p>For binary chromosomes, the standard mutation operator is bit-flip mutation: <code>0 -> 1</code> or <code>1 -> 0</code>.</p>
+  </div>
+
+  <div class="section">
+    <h2>Replacement and Termination</h2>
+    <table>
+      <thead>
+        <tr><th>Choice</th><th>Meaning</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Generational replacement</td><td>Entire population is replaced by offspring</td><td>Simple and clean generation boundaries</td></tr>
+        <tr><td>Steady-state replacement</td><td>Only some individuals are replaced</td><td>Lets good parents survive longer</td></tr>
+        <tr><td>Elitism</td><td>Best individual is always preserved</td><td>Protects the best-so-far solution from being lost</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>Typical termination conditions: maximum generations, threshold fitness, or no improvement for several generations.</li>
+      <li>GAs are stochastic and do not guarantee the global optimum.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Important Parameters</h2>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>What it controls</th><th>Typical note from the slides</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Population size</td><td>How many chromosomes exist each generation</td><td>Problem-dependent, tuned experimentally</td></tr>
+        <tr><td>Selection method</td><td>How parents are chosen</td><td>Tournament, roulette wheel, or rank</td></tr>
+        <tr><td>Crossover type</td><td>How parents are recombined</td><td>One-point is the main worked example</td></tr>
+        <tr><td>Crossover probability <code>p_c</code></td><td>Whether crossover happens</td><td>Usually high, often around 0.85 in examples</td></tr>
+        <tr><td>Mutation type</td><td>How offspring is perturbed</td><td>Bit-flip for binary strings</td></tr>
+        <tr><td>Mutation rate <code>p_m</code></td><td>How often mutation happens</td><td>Lower than crossover; notes use 15% in the worked example</td></tr>
+        <tr><td>Stopping criterion</td><td>When the run ends</td><td>Number of generations or target fitness</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Worked Mini Example</h2>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Select parents.</strong><p>Suppose tournament selection gives <code>P1 = 111011</code> and <code>P2 = 101010</code>.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Choose a crossover point.</strong><p>At position 3, produce <code>111010</code> and <code>101011</code>.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Apply mutation.</strong><p>If one selected bit flips in <code>111010</code>, it may become <code>111110</code>.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Evaluate and replace.</strong><p>Compute offspring fitness values, update the population, and continue until termination.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Tutorial-Style Example: Searching For 00000000</h2>
+    <p>This is the kind of practical framing that makes GA questions easier to follow. Suppose the goal is to evolve an 8-bit string of all zeros, and fitness is defined as the <strong>number of zero bits</strong>.</p>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Chromosome</th><th>Zero count</th><th>Fitness</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>10100110</td><td>4</td><td>4</td></tr>
+        <tr><td>00011100</td><td>5</td><td>5</td></tr>
+        <tr><td>11001010</td><td>4</td><td>4</td></tr>
+        <tr><td>00000011</td><td>6</td><td>6</td></tr>
+      </tbody>
+    </table>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Evaluate the initial population.</strong><p>The chromosome <code>00000011</code> is currently best because it has 6 zero bits.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Select parents.</strong><p>A tournament or rank-based method should make the fitter strings more likely to reproduce.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Apply crossover and mutation.</strong><p>The search should gradually preserve useful zero-rich patterns while mutation occasionally creates new zero positions.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Track convergence.</strong><p>If many individuals become nearly identical too early, you may be seeing premature convergence.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>How To Read A Full GA Run</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Exploration comes from</strong>
+        <ul>
+          <li>Initial random population</li>
+          <li>Mutation</li>
+          <li>Weaker individuals still sometimes being selected</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <strong>Exploitation comes from</strong>
+        <ul>
+          <li>Selection pressure</li>
+          <li>Crossover combining good building blocks</li>
+          <li>Elitism preserving the best-so-far solution</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout">When you explain a GA, do not describe the operators in isolation. Always connect them to the bigger search behavior: which parts intensify the search, and which parts keep it diverse.</div>
+  </div>
+
+  <div class="section">
+    <h2>Exam Checklist</h2>
+    <ul class="checklist">
+      <li class="done">Explain why GA is population-based rather than single-solution search.</li>
+      <li class="done">Write the full algorithm cycle in order.</li>
+      <li class="done">Work one-point crossover and bit-flip mutation by hand.</li>
+      <li class="done">State why <code>p_c</code> is usually high and <code>p_m</code> is lower.</li>
+      <li class="done">Describe replacement strategies and elitism.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">Semester II scope section 2 of 6</div>
+</div>
+<script>
+(function(){
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

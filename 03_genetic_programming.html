@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Genetic Programming</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #6ea33c; --accent2: #4e8fc3; --accent3: #b7683d; }
+  .hero::before { content: '03'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="02_genetic_algorithms.html"><- Genetic Algorithms</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="04_ant_colony_optimisation.html">Ant Colony Optimisation -></a>
+</nav>
+<div class="hero">
+  <div class="tag">COS314 | Semester II Scope</div>
+  <h1>Genetic Programming</h1>
+  <p class="subtitle">Program evolution using syntax trees, subtree crossover, tree mutation, and the key parameters that control GP runs.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>What Makes GP Different?</h2>
+    <p>Genetic Programming is an evolutionary algorithm like a GA, but the individuals are executable programs rather than fixed simple strings. In the notes, those programs are represented as syntax trees.</p>
+    <div class="comparison">
+      <div class="comparison-col">
+        <h4>GA</h4>
+        <p>Chromosomes represent candidate solutions directly.</p>
+        <p>Operators work on strings or arrays.</p>
+      </div>
+      <div class="comparison-col">
+        <h4>GP</h4>
+        <p>Trees represent candidate programs or expressions.</p>
+        <p>Operators work on subtrees and terminals.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Algorithm Flow</h2>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Define function set and terminal set.</strong><p>These determine what a valid program tree can contain.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Generate an initial population of trees.</strong><p>Common methods are Full, Grow, and Ramped Half-and-Half.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Evaluate fitness.</strong><p>Run or interpret each tree against the fitness cases.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Select parents.</strong><p>The same scoped methods apply here too: tournament, fitness proportionate, and rank selection.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Apply genetic operators.</strong><p>Subtree crossover is primary; grow or shrink mutation introduces diversity.</p></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-content"><strong>Replace population and check termination.</strong><p>Use generational or steady-state replacement and optionally elitism.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Representation: Syntax Trees</h2>
+    <div class="card">
+      <strong>Function set</strong>
+      Internal nodes such as <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, or domain-specific operators.
+    </div>
+    <div class="card blue">
+      <strong>Terminal set</strong>
+      Leaf nodes such as variables, constants, or zero-argument symbols.
+    </div>
+    <div class="ascii">      /
+     / \
+    *   -
+   / \ / \
+  a  c a  b</div>
+    <p class="muted-note">The tree above represents the expression <code>(a * c) / (a - b)</code>.</p>
+  </div>
+
+  <div class="section">
+    <h2>Initial Population Methods</h2>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>How it builds trees</th><th>Main practical effect</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Full</td><td>Internal nodes stay functions until the maximum depth is reached</td><td>Produces bushy, regular trees</td></tr>
+        <tr><td>Grow</td><td>Can place functions or terminals before the maximum depth</td><td>Produces irregular tree shapes</td></tr>
+        <tr><td>Ramped Half-and-Half</td><td>Mix of Full and Grow across several depths</td><td>Improves initial diversity</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Subtree Crossover</h2>
+    <div class="card">
+      <strong>Definition</strong>
+      Select one crossover point in each parent tree and swap the subtrees rooted at those points.
+    </div>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Select Parent 1 and Parent 2.</strong><p>Use one of the scoped selection methods.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Pick one node in each tree.</strong><p>Those nodes become the crossover points.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Swap the subtrees.</strong><p>This creates two offspring trees.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Check depth limit.</strong><p>If an offspring exceeds the maximum allowed depth, it must be pruned or rejected.</p></div></div>
+    </div>
+    <div class="formula">Apply crossover if r &lt; p_c</div>
+  </div>
+
+  <div class="section">
+    <h2>Mutation</h2>
+    <table>
+      <thead>
+        <tr><th>Mutation type</th><th>Operation</th><th>Effect on tree size</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Grow mutation</td><td>Replace a terminal node with a randomly generated subtree</td><td>Tree gets larger</td></tr>
+        <tr><td>Shrink mutation</td><td>Replace a selected subtree with a terminal node</td><td>Tree gets smaller</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">GP notes emphasise depth limits during mutation as well. A mutation may be valid conceptually but still invalid if it breaks the allowed tree-depth constraint.</div>
+  </div>
+
+  <div class="section">
+    <h2>Parameters You Should Be Able To Name</h2>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Function set</td><td>Defines valid internal nodes and the expressive power of trees</td></tr>
+        <tr><td>Terminal set</td><td>Defines valid leaves and constants/variables available to programs</td></tr>
+        <tr><td>Population size</td><td>Number of candidate programs per generation</td></tr>
+        <tr><td>Maximum initial depth</td><td>Limits generated tree depth during initialisation</td></tr>
+        <tr><td>Offspring depth limit</td><td>Stops crossover from generating overly deep offspring</td></tr>
+        <tr><td>Mutation depth limit</td><td>Controls the size of newly inserted random subtrees</td></tr>
+        <tr><td>Crossover probability <code>p_c</code></td><td>How often subtree crossover is applied</td></tr>
+        <tr><td>Mutation rate <code>p_m</code></td><td>How often mutation is applied</td></tr>
+        <tr><td>Selection method</td><td>How parents are chosen</td></tr>
+        <tr><td>Termination condition</td><td>Maximum generations, target performance, or no improvement</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Worked Practical Pattern</h2>
+    <p>If you get a GP question in the test, a strong answer usually follows this order:</p>
+    <ul>
+      <li>Identify the function set and terminal set.</li>
+      <li>Show the candidate tree clearly.</li>
+      <li>State how fitness is computed from the training cases.</li>
+      <li>Show the selected crossover or mutation point.</li>
+      <li>Draw or describe the offspring tree after the operator.</li>
+      <li>Mention depth limits and whether elitism or replacement applies.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Tutorial-Style Tree Reading</h2>
+    <p>A lot of GP questions become much easier once you can read a tree fluently.</p>
+    <div class="ascii">      *
+     / \
+    *   +
+   / \ / \
+  a  b c  d</div>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Question type</th><th>Answer on this tree</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tree type</td><td>Arithmetic tree</td></tr>
+        <tr><td>Function set used here</td><td><code>*</code> and <code>+</code></td></tr>
+        <tr><td>Terminal set used here</td><td><code>a, b, c, d</code></td></tr>
+        <tr><td>Executable expression</td><td><code>(a * b) * (c + d)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Subtree Crossover Demonstration</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Parent 1</strong>
+        <div class="ascii">    /
+   / \
+  *   -
+ / \ / \
+a  c a  b</div>
+      </div>
+      <div class="card blue">
+        <strong>Parent 2</strong>
+        <div class="ascii">  +
+ / \
+x  y</div>
+      </div>
+    </div>
+    <p>If the selected crossover fragment in Parent 1 is the <code>*</code> subtree and the selected fragment in Parent 2 is the entire <code>+</code> tree, the swap produces these offspring:</p>
+    <div class="ascii">Offspring 1: (x + y) / (a - b)
+Offspring 2: a * c</div>
+    <div class="callout">This is the key GP intuition: crossover swaps pieces of executable structure, not just positions in a flat string.</div>
+  </div>
+
+  <div class="section">
+    <h2>Mutation Demonstration</h2>
+    <table class="tight-table">
+      <thead>
+        <tr><th>Mutation</th><th>What you select</th><th>What you insert</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Grow mutation</td><td>A terminal leaf</td><td>A random subtree</td><td>Tree becomes larger and potentially more expressive</td></tr>
+        <tr><td>Shrink mutation</td><td>A subtree</td><td>A terminal</td><td>Tree becomes smaller and simpler</td></tr>
+      </tbody>
+    </table>
+    <p>When doing these by hand, always identify the mutation point first, then rewrite only that part of the tree.</p>
+  </div>
+
+  <div class="section">
+    <h2>Exam Checklist</h2>
+    <ul class="checklist">
+      <li class="done">Explain the difference between GA strings and GP trees.</li>
+      <li class="done">Identify function and terminal sets in a given problem.</li>
+      <li class="done">Work subtree crossover by hand.</li>
+      <li class="done">Distinguish grow mutation from shrink mutation.</li>
+      <li class="done">State the role of tree-depth limits and why they matter.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">Semester II scope section 3 of 6</div>
+</div>
+<script>
+(function(){
+  const bar = document.createElement('div');
+  bar.id = 'progress-bar';
+  document.body.prepend(bar);
+  window.addEventListener('scroll', function () {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

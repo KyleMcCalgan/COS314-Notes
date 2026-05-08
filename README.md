@@ -1,83 +1,38 @@
-# COS314 Study Pack
+# COS314 Semester II Study Pack
 
-Self-contained HTML study notes for COS314 (Artificial Intelligence) at UP. Open `index.html` in a browser — no build step, no server needed.
+Self-contained HTML notes for the COS314 Semester II test scope. Open `index.html` in a browser. No build step is required.
 
-## Structure
+## Scope-aligned pages
 
 ```
-index.html              ← topic index / home page
-styles.css              ← shared base styles
-01_problem_representation.html
-02_heuristics.html
-03_dfs_dfid_bfs.html
-04_hill_climbing_astar.html
-05_minimax_alphabeta.html
-06_sa_tabu_ils.html
-07_genetic_algorithms.html
-demos/                        ← standalone interactive visualisations (embedded via <iframe>)
-  sa_8x8.html               ← SA Metropolis step-through on an 8×8 grid
-  tabu_grid.html            ← Tabu Search on a 7×5 cost grid
-  tabu_continuous.html      ← Tabu Search on a continuous landscape
-  ils.html                  ← Iterated Local Search on a continuous landscape
-  best_first_search_tree.html ← Best First Search tree step-through with OPEN list table
-  astar_tree_with_table.html  ← A* tree step-through with g/h/f table
-  four_level_min_root_with_prune.html ← Alpha-Beta Pruning 15-step walkthrough
-ST1_Summary.html            ← full summary of all theory and algorithms
+index.html
+styles.css
+01_selection_methods.html
+02_genetic_algorithms.html
+03_genetic_programming.html
+04_ant_colony_optimisation.html
+05_particle_swarm_optimisation.html
+06_grammatical_evolution.html
+ST1_Summary.html
 ```
 
-## Coming Soon
+## What this pack now focuses on
 
-The following algorithms currently have no interactive demo and are planned:
+- The sections match the uploaded test-scope image exactly.
+- Practical content is prioritised over long theory passages.
+- Algorithms are written in execution order where possible.
+- Parameters and equations are called out explicitly.
+- Worked patterns are included for selection methods, ACO, and GE mapping.
 
-| Algorithm | Topic file |
-|---|---|
-| DFS | `03_dfs_dfid_bfs.html` |
-| BFS | `03_dfs_dfid_bfs.html` |
-| DFID | `03_dfs_dfid_bfs.html` |
-| Hill Climbing | `04_hill_climbing_astar.html` |
-| Minimax | `05_minimax_alphabeta.html` |
-| Genetic Algorithm | `07_genetic_algorithms.html` |
+## Source notes used
 
-## Adding a new interactive demo
+The HTML pages were expanded from the markdown files in `../MD`:
 
-Demos come from Claude as HTML fragments. To embed one:
+- `GA_Notes_COS314.md`
+- `Genetic_Programming_Notes.md`
+- `Grammatical_Evolution_Notes.md`
+- `Swarm_Intelligence_Notes.md`
 
-**1. Wrap it** — create `demos/your_demo.html` using `demos/sa_8x8.html` as the shell template. The key parts to keep from the template are the `<!DOCTYPE>`, the base reset CSS, and the `:root` block that bridges Claude's CSS variables to this dark theme:
+## Cross-reference page
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f1117; color: #d4d0c8; }
-:root {
-  --color-border-secondary:    #252830;
-  --color-border-tertiary:     #1e2028;
-  --color-background-secondary:#1c1f2b;
-  --color-background-primary:  #0f1117;
-  --color-text-primary:        #e0d8c8;
-  --color-text-secondary:      #a0988a;
-  --color-text-tertiary:       #605850;
-  --border-radius-md:          6px;
-  --font-mono: 'Cascadia Code','Fira Mono','Consolas',monospace;
-}
-</style>
-</head>
-<body>
-  <!-- paste the Claude fragment here -->
-</body>
-</html>
-```
-
-**2. Embed it** — in the relevant topic file, add:
-
-```html
-<h3>Interactive Demo: Your Title</h3>
-<p>One sentence describing what to look for.</p>
-<iframe class="demo-frame" src="demos/your_demo.html" title="Your Title" style="height:500px"></iframe>
-```
-
-The `.demo-frame` class (defined in each topic file's `<style>`) handles the border and border-radius. The auto-resize script at the bottom of each topic file will adjust the height automatically on load — the `style="height:500px"` is just the initial fallback.
+`ST1_Summary.html` is now used as a Semester II scope summary page that maps each exam-scope item to the relevant HTML document.
