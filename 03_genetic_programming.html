@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #6ea33c; --accent2: #4e8fc3; --accent3: #b7683d; }
   .hero::before { content: '03'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #ffffff;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -68,6 +75,8 @@
    / \ / \
   a  c a  b</div>
     <p class="muted-note">The tree above represents the expression <code>(a * c) / (a - b)</code>.</p>
+    <p>If tree drawing ever feels mechanical, use the walkthrough below to practice the root-first decomposition process visually.</p>
+    <iframe class="demo-frame" src="demos/ST2/tree_construction_walkthrough.html" title="Syntax Tree Construction Walkthrough" style="height: 980px"></iframe>
   </div>
 
   <div class="section">
@@ -193,6 +202,12 @@ Offspring 2: a * c</div>
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Full GP Walkthrough</h2>
+    <p>This walkthrough ties the whole topic together: GP representation, function and terminal sets, initial tree generation, traversals, subtree crossover, mutation, fitness, and bloat control.</p>
+    <iframe class="demo-frame" src="demos/ST2/gp_full_walkthrough.html" title="Full Genetic Programming Walkthrough" style="height: 1200px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Mutation Demonstration</h2>
     <table class="tight-table">
       <thead>
@@ -220,6 +235,31 @@ Offspring 2: a * c</div>
   <div class="nav-hint">Semester II scope section 3 of 6</div>
 </div>
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      const doc = this.contentDocument;
+      const root = doc.documentElement;
+      const body = doc.body;
+      root.style.setProperty('--color-text-primary', '#1f2937');
+      root.style.setProperty('--color-text-secondary', '#6b7280');
+      root.style.setProperty('--color-background-primary', '#ffffff');
+      root.style.setProperty('--color-background-secondary', '#f3f4f6');
+      root.style.setProperty('--color-border-secondary', '#d1d5db');
+      root.style.setProperty('--color-border-tertiary', '#e5e7eb');
+      root.style.setProperty('--border-radius-md', '8px');
+      root.style.setProperty('--border-radius-lg', '12px');
+      root.style.setProperty('--font-mono', '"JetBrains Mono", "Courier New", monospace');
+      body.style.background = '#ffffff';
+      body.style.color = '#1f2937';
+      body.style.margin = '0';
+      body.style.padding = '16px';
+      this.style.height = this.contentDocument.documentElement.scrollHeight + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 <script>
 (function(){
   const bar = document.createElement('div');

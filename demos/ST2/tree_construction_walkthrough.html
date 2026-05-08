@@ -1,0 +1,206 @@
+
+<style>
+  .tb-btn{padding:8px 18px;border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);cursor:pointer;font-size:14px;font-weight:500;color:var(--color-text-primary);}
+  .tb-btn:hover{background:var(--color-background-secondary);}
+  .tb-btn:disabled{opacity:0.35;cursor:default;}
+  .tb-btn.primary{background:#EEEDFE;border-color:#7F77DD;color:#26215C;}
+  .tb-btn.primary:hover{background:#CECBF6;}
+  .cap{border-left:3px solid #7F77DD;border-radius:0;padding:10px 14px;background:#EEEDFE;margin-bottom:14px;}
+  .cap p{font-size:13px;color:#534AB7;margin:0;line-height:1.6;}
+  .pill{display:inline-block;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#EEEDFE;color:#3C3489;margin-bottom:8px;}
+  .sc{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:10px;}
+  .lbl{font-size:12px;color:var(--color-text-secondary);}
+  .nf{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:#EEEDFE;border:1.5px solid #7F77DD;font-size:14px;font-weight:500;color:#26215C;}
+  .nt{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:#E1F5EE;border:1.5px solid #1D9E75;font-size:14px;font-weight:500;color:#04342C;}
+  .nh{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:#FAECE7;border:2px solid #D85A30;font-size:13px;font-weight:500;color:#4A1B0C;}
+  .tr{display:flex;justify-content:center;gap:16px;margin:6px 0;align-items:center;}
+  .e{width:1px;height:20px;background:var(--color-border-secondary);margin:0 auto;}
+  .expr-tok{padding:4px 10px;border-radius:var(--border-radius-md);font-size:14px;font-weight:500;display:inline-block;margin:2px;}
+  .tok-op{background:#EEEDFE;color:#3C3489;}
+  .tok-term{background:#E1F5EE;color:#085041;}
+  .tok-root{background:#FAECE7;color:#4A1B0C;border:1.5px solid #D85A30;}
+  .tok-bracket{background:var(--color-background-secondary);color:var(--color-text-secondary);}
+  .expr-sel{display:inline;background:#FAECE7;border-radius:4px;padding:0 3px;color:#4A1B0C;font-weight:500;}
+  .prec-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;}
+</style>
+
+<h2 class="sr-only">Interactive expression to syntax tree construction walkthrough using step-by-step recursive decomposition</h2>
+
+<div style="padding:1rem 0;" id="tb-root"></div>
+
+<script>
+const EXAMPLES=[
+  {
+    label:'(a * c) / (a - b)',
+    steps:[
+      {title:'The expression',caption:'We want to convert this into a syntax tree. The rule is: find the operator with the lowest precedence that sits outside all brackets — that becomes the root. We work from outermost to innermost.',
+      render(){return `<div class="sc">
+        <p class="lbl" style="margin:0 0 8px;">Full expression</p>
+        <div style="font-size:20px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-mono);letter-spacing:1px;">(a * c) / (a - b)</div>
+        <div style="margin-top:14px;">
+          <p class="lbl" style="margin:0 0 6px;font-weight:500;">Precedence table (lowest = becomes root first)</p>
+          ${[['1 (lowest)','OR','sits highest in tree'],['2','AND',''],['3','NOT',''],['4','< > == !=','comparisons'],['5','+ and -',''],['6','* and /',''],['7','functions','sin, log etc'],['8 (highest)','terminals','leaves of tree']].map(r=>`<div class="prec-row"><span style="color:var(--color-text-secondary);width:80px;">${r[0]}</span><span style="font-weight:500;">${r[1]}</span><span class="lbl">${r[2]}</span></div>`).join('')}
+        </div>
+      </div>`;}},
+      {title:'Step 1 — add full brackets',caption:'Fully bracket the expression using BODMAS. This makes the evaluation order completely explicit and removes any ambiguity before we find the root.',
+      render(){return `<div class="sc">
+        <p class="lbl" style="margin:0 0 6px;">Original</p>
+        <div style="font-size:16px;font-family:var(--font-mono);margin-bottom:10px;">(a * c) / (a - b)</div>
+        <p class="lbl" style="margin:0 0 6px;">Fully bracketed</p>
+        <div style="font-size:16px;font-family:var(--font-mono);color:#3C3489;font-weight:500;">( (a * c) / (a - b) )</div>
+        <p class="lbl" style="margin:10px 0 0;">The outermost brackets now clearly wrap the whole expression. The operator inside them at the outermost level is our root.</p>
+      </div>`;}},
+      {title:'Step 2 — find the root operator',caption:'Scan outside all inner brackets. The only operator sitting at the outermost level is /. This becomes the root of the tree because it is evaluated last.',
+      render(){return `<div class="sc">
+        <p class="lbl" style="margin:0 0 8px;">Outermost operator highlighted</p>
+        <div style="font-size:16px;font-family:var(--font-mono);">( (a * c) <span class="expr-sel">/</span> (a - b) )</div>
+        <p class="lbl" style="margin:10px 0 6px;">Split at /:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#EEEDFE;border-radius:var(--border-radius-md);padding:8px 12px;"><p class="lbl" style="margin:0 0 4px;">Left subtree</p><span style="font-family:var(--font-mono);color:#26215C;">(a * c)</span></div>
+          <div style="background:#E1F5EE;border-radius:var(--border-radius-md);padding:8px 12px;"><p class="lbl" style="margin:0 0 4px;">Right subtree</p><span style="font-family:var(--font-mono);color:#04342C;">(a - b)</span></div>
+        </div>
+      </div>
+      <div class="sc" style="text-align:center;">
+        <p class="lbl" style="margin:0 0 6px;">Tree so far</p>
+        <div class="tr"><div class="nh">/</div></div>
+        <div style="display:flex;justify-content:center;gap:50px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr"><div style="font-size:12px;color:#3C3489;padding:4px 8px;border:0.5px dashed #7F77DD;border-radius:4px;">a*c</div><div style="font-size:12px;color:#085041;padding:4px 8px;border:0.5px dashed #1D9E75;border-radius:4px;">a-b</div></div>
+      </div>`;}},
+      {title:'Step 3 — recurse left: (a * c)',caption:'Now apply the same process to the left subtree (a * c). The only operator is *. It becomes the internal node. a and c are terminals so they become leaf nodes.',
+      render(){return `<div class="sc">
+        <div style="font-size:15px;font-family:var(--font-mono);margin-bottom:10px;">(<span class="expr-sel">*</span> between a and c)</div>
+        <p class="lbl" style="margin:0 0 6px;">* is the only operator → internal node. a and c are terminals → leaves.</p>
+        <div class="sc" style="text-align:center;margin-top:8px;">
+          <div class="tr"><div class="nf">*</div></div>
+          <div style="display:flex;justify-content:center;gap:30px;"><div class="e"></div><div class="e"></div></div>
+          <div class="tr"><div class="nt">a</div><div class="nt">c</div></div>
+        </div>
+      </div>
+      <div class="sc" style="text-align:center;">
+        <p class="lbl" style="margin:0 0 6px;">Full tree so far</p>
+        <div class="tr"><div class="nh">/</div></div>
+        <div style="display:flex;justify-content:center;gap:50px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr"><div class="nf">*</div><div style="font-size:12px;color:#085041;padding:4px 8px;border:0.5px dashed #1D9E75;border-radius:4px;">a-b</div></div>
+        <div style="display:flex;justify-content:center;margin-right:60px;gap:20px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr" style="justify-content:flex-start;padding-left:50px;gap:10px;"><div class="nt">a</div><div class="nt">c</div></div>
+      </div>`;}},
+      {title:'Step 4 — recurse right: (a - b)',caption:'Same process on the right subtree. The operator is -. Because - is non-commutative, left child must be a (the left operand) and right child must be b (the right operand). Order matters.',
+      render(){return `<div class="sc">
+        <div style="font-size:15px;font-family:var(--font-mono);margin-bottom:8px;">(a <span class="expr-sel">-</span> b)</div>
+        <p class="lbl" style="margin:0 0 4px;">- is non-commutative — left child = a, right child = b. Swapping would change the result.</p>
+        <div class="sc" style="text-align:center;margin-top:8px;">
+          <div class="tr"><div class="nf">-</div></div>
+          <div style="display:flex;justify-content:center;gap:30px;"><div class="e"></div><div class="e"></div></div>
+          <div class="tr"><div class="nt">a</div><div class="nt">b</div></div>
+        </div>
+      </div>`;}},
+      {title:'Step 5 — complete tree',caption:'All subtrees are resolved. Reading the complete tree: root / has left child * (with leaves a, c) and right child - (with leaves a, b). This encodes (a*c)/(a-b) exactly.',
+      render(){return `<div class="sc" style="text-align:center;">
+        <div class="tr"><div class="nf">/</div></div>
+        <div style="display:flex;justify-content:center;gap:60px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr"><div class="nf">*</div><div class="nf">-</div></div>
+        <div style="display:flex;justify-content:center;gap:8px;"><div class="e"></div><div class="e"></div><div style="width:24px"></div><div class="e"></div><div class="e"></div></div>
+        <div class="tr"><div class="nt">a</div><div class="nt">c</div><div class="nt">a</div><div class="nt">b</div></div>
+        <p style="font-size:13px;color:var(--color-text-secondary);margin:10px 0 0;">Expression: (a * c) / (a - b)</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">
+        <div class="sc"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Preorder</p><code style="font-size:12px;">/ * a c - a b</code></div>
+        <div class="sc"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Inorder</p><code style="font-size:12px;">a * c / a - b</code></div>
+        <div class="sc"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Postorder</p><code style="font-size:12px;">a c * a b - /</code></div>
+      </div>`;}},
+    ]
+  },
+  {
+    label:'(a+b) > c AND x*y',
+    steps:[
+      {title:'The expression',caption:'This mixes logical and arithmetic operators. BODMAS alone is not enough — we need the full precedence table including AND, OR, NOT and comparisons.',
+      render(){return `<div class="sc">
+        <p class="lbl" style="margin:0 0 8px;">Full expression</p>
+        <div style="font-size:18px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary);">(a+b) > c AND x*y</div>
+        <p class="lbl" style="margin:12px 0 6px;font-weight:500;">Key precedences present in this expression:</p>
+        ${[['AND','lowest — will be root'],['> (comparison)','middle'],['+ and *','highest arithmetic']].map(r=>`<div class="prec-row"><span style="font-weight:500;width:140px;">${r[0]}</span><span class="lbl">${r[1]}</span></div>`).join('')}
+      </div>`;}},
+      {title:'Step 1 — find the root',caption:'Scan for the lowest precedence operator outside all brackets. AND is present and has lower precedence than > or any arithmetic operator. AND becomes the root.',
+      render(){return `<div class="sc">
+        <div style="font-size:16px;font-family:var(--font-mono);">(a+b) > c <span class="expr-sel">AND</span> x*y</div>
+        <p class="lbl" style="margin:10px 0 6px;">Split at AND:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#EEEDFE;border-radius:var(--border-radius-md);padding:8px 12px;"><p class="lbl" style="margin:0 0 4px;">Left subtree</p><span style="font-family:var(--font-mono);color:#26215C;">(a+b) > c</span></div>
+          <div style="background:#E1F5EE;border-radius:var(--border-radius-md);padding:8px 12px;"><p class="lbl" style="margin:0 0 4px;">Right subtree</p><span style="font-family:var(--font-mono);color:#04342C;">x * y</span></div>
+        </div>
+      </div>
+      <div class="sc" style="text-align:center;">
+        <div class="tr"><div class="nh">AND</div></div>
+        <div style="display:flex;justify-content:center;gap:50px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr"><div style="font-size:11px;color:#3C3489;padding:4px 8px;border:0.5px dashed #7F77DD;border-radius:4px;">(a+b)>c</div><div style="font-size:11px;color:#085041;padding:4px 8px;border:0.5px dashed #1D9E75;border-radius:4px;">x*y</div></div>
+      </div>`;}},
+      {title:'Step 2 — recurse left: (a+b) > c',caption:'The left subtree is (a+b) > c. Scan for lowest precedence operator: > is a comparison, which is lower than +. So > becomes this subtree\'s root. Left of > is (a+b), right is c.',
+      render(){return `<div class="sc">
+        <div style="font-size:15px;font-family:var(--font-mono);">(a+b) <span class="expr-sel">></span> c</div>
+        <p class="lbl" style="margin:8px 0 6px;">Split at >: left=(a+b), right=c. Then recurse into (a+b): + is the only operator, a and b are terminals.</p>
+        <div class="sc" style="text-align:center;">
+          <div class="tr"><div class="nf">></div></div>
+          <div style="display:flex;justify-content:center;gap:40px;"><div class="e"></div><div class="e"></div></div>
+          <div class="tr"><div class="nf">+</div><div class="nt">c</div></div>
+          <div style="display:flex;justify-content:center;margin-right:52px;gap:20px;"><div class="e"></div><div class="e"></div></div>
+          <div class="tr" style="justify-content:flex-start;padding-left:46px;gap:10px;"><div class="nt">a</div><div class="nt">b</div></div>
+        </div>
+      </div>`;}},
+      {title:'Step 3 — recurse right: x * y',caption:'The right subtree is x*y. The only operator is *. x is the left operand, y is the right operand. Both are terminals so they become leaves.',
+      render(){return `<div class="sc">
+        <div style="font-size:15px;font-family:var(--font-mono);">x <span class="expr-sel">*</span> y</div>
+        <div class="sc" style="text-align:center;margin-top:8px;">
+          <div class="tr"><div class="nf">*</div></div>
+          <div style="display:flex;justify-content:center;gap:30px;"><div class="e"></div><div class="e"></div></div>
+          <div class="tr"><div class="nt">x</div><div class="nt">y</div></div>
+        </div>
+      </div>`;}},
+      {title:'Step 4 — complete tree',caption:'All subtrees resolved. AND is root, left branch handles the comparison (a+b)>c, right branch handles x*y. This faithfully encodes the original mixed logical-arithmetic expression.',
+      render(){return `<div class="sc" style="text-align:center;">
+        <div class="tr"><div class="nf" style="font-size:11px;width:44px;height:44px;">AND</div></div>
+        <div style="display:flex;justify-content:center;gap:80px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr"><div class="nf">></div><div class="nf">*</div></div>
+        <div style="display:flex;justify-content:center;gap:8px;">
+          <div class="e"></div><div class="e"></div>
+          <div style="width:40px"></div>
+          <div class="e"></div><div class="e"></div>
+        </div>
+        <div class="tr"><div class="nf">+</div><div class="nt">c</div><div class="nt">x</div><div class="nt">y</div></div>
+        <div style="display:flex;justify-content:center;margin-right:110px;gap:14px;"><div class="e"></div><div class="e"></div></div>
+        <div class="tr" style="justify-content:flex-start;padding-left:30px;gap:10px;"><div class="nt">a</div><div class="nt">b</div></div>
+        <p style="font-size:13px;color:var(--color-text-secondary);margin:10px 0 0;">(a+b) > c AND x*y</p>
+      </div>`;}},
+    ]
+  }
+];
+
+let exIdx=0, stIdx=0;
+function render(){
+  const ex=EXAMPLES[exIdx];
+  const step=ex.steps[stIdx];
+  const total=ex.steps.length;
+  const pct=Math.round(stIdx/(total-1)*100);
+  document.getElementById('tb-root').innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      ${EXAMPLES.map((e,i)=>`<button class="tb-btn ${i===exIdx?'primary':''}" onclick="switchEx(${i})">${e.label}</button>`).join('')}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="flex:1;height:4px;background:var(--color-background-secondary);border-radius:2px;">
+        <div style="width:${pct}%;height:4px;background:#7F77DD;border-radius:2px;transition:width 0.3s;"></div>
+      </div>
+      <span class="lbl">${stIdx+1} / ${total}</span>
+    </div>
+    <span class="pill">Step ${stIdx+1} of ${total}</span>
+    <h3 style="margin:0 0 10px;font-size:16px;font-weight:500;">${step.title}</h3>
+    <div class="cap"><p>${step.caption}</p></div>
+    <div>${step.render()}</div>
+    <div style="display:flex;gap:10px;margin-top:18px;align-items:center;">
+      <button class="tb-btn" onclick="prev()" ${stIdx===0?'disabled':''}><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      <button class="tb-btn primary" onclick="next()" ${stIdx===total-1?'disabled':''}>Next step <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+    </div>`;
+}
+function next(){if(stIdx<EXAMPLES[exIdx].steps.length-1){stIdx++;render();}}
+function prev(){if(stIdx>0){stIdx--;render();}}
+function switchEx(i){exIdx=i;stIdx=0;render();}
+render();
+</script>

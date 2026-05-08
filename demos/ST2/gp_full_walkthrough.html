@@ -1,0 +1,388 @@
+
+<style>
+  .gp-btn{padding:8px 18px;border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);cursor:pointer;font-size:14px;font-weight:500;color:var(--color-text-primary);}
+  .gp-btn:hover{background:var(--color-background-secondary);}
+  .gp-btn:disabled{opacity:0.35;cursor:default;}
+  .gp-btn.primary{background:#EEEDFE;border-color:#7F77DD;color:#26215C;}
+  .gp-btn.primary:hover{background:#CECBF6;}
+  .caption-box{border-left:3px solid #7F77DD;border-radius:0;padding:10px 14px;background:#EEEDFE;margin-bottom:16px;}
+  .caption-body{font-size:13px;color:#534AB7;margin:0;line-height:1.6;}
+  .step-pill{display:inline-block;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:#EEEDFE;color:#3C3489;margin-bottom:10px;}
+  .sec-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:10px;}
+  .lbl{font-size:12px;color:var(--color-text-secondary);}
+  .node-func{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#EEEDFE;border:1.5px solid #7F77DD;font-size:14px;font-weight:500;color:#26215C;}
+  .node-term{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#E1F5EE;border:1.5px solid #1D9E75;font-size:14px;font-weight:500;color:#04342C;}
+  .node-highlight{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#FAECE7;border:2px solid #D85A30;font-size:14px;font-weight:500;color:#4A1B0C;}
+  .tree-row{display:flex;justify-content:center;gap:20px;margin:8px 0;align-items:center;}
+  .edge{width:1px;height:24px;background:var(--color-border-secondary);margin:0 auto;}
+  .h-edges{display:flex;justify-content:center;}
+  .traversal-seq{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .tnode{padding:4px 10px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;}
+  .tnode.func{background:#EEEDFE;color:#3C3489;}
+  .tnode.term{background:#E1F5EE;color:#085041;}
+  .tnode.active{background:#FAECE7;color:#4A1B0C;border:1.5px solid #D85A30;}
+  .pop-tree{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px;text-align:center;}
+</style>
+
+<h2 class="sr-only">Step-by-step genetic programming walkthrough covering all 9 concepts from tree population to bloat</h2>
+
+<div style="padding:1rem 0;" id="gp-root"></div>
+
+<script>
+const STEPS=[
+{title:'Step 1 — GA vs GP: what changes',
+caption:'In GA, individuals are fixed-length binary strings. In GP, individuals are variable-size syntax trees that represent executable programs. Everything else — selection, crossover, mutation, replacement — follows the same loop, but the operators are tree-aware.',
+render(){
+return `<div class="sec-card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div>
+      <p class="lbl" style="margin:0 0 6px;font-weight:500;">GA individual</p>
+      <div style="display:flex;gap:3px;">${[1,0,1,1,0,1].map(b=>`<div style="width:30px;height:30px;border-radius:4px;background:#EEEDFE;border:0.5px solid #7F77DD;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#26215C;">${b}</div>`).join('')}</div>
+      <p class="lbl" style="margin:6px 0 0;">Fixed length, binary string</p>
+    </div>
+    <div>
+      <p class="lbl" style="margin:0 0 6px;font-weight:500;">GP individual</p>
+      ${treeA()}
+      <p class="lbl" style="margin:6px 0 0;">Variable size, syntax tree</p>
+    </div>
+  </div>
+</div>
+<div class="sec-card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+    <div><span class="lbl">GA searches for</span><br><span style="color:var(--color-text-primary);">best parameter values</span></div>
+    <div><span class="lbl">GP searches for</span><br><span style="color:var(--color-text-primary);">best program/formula</span></div>
+    <div><span class="lbl">GA output</span><br><code style="font-size:12px;">x=5, y=3</code></div>
+    <div><span class="lbl">GP output</span><br><code style="font-size:12px;">y = x*x + x</code></div>
+  </div>
+</div>`;
+}},
+{title:'Step 2 — syntax trees: nodes and leaves',
+caption:'Every GP individual is a tree. Internal nodes (circles, purple) are functions — operators like +, -, *, /. Leaf nodes (circles, teal) are terminals — variables like x, y or constants like 3. Reading the tree gives you the expression.',
+render(){
+return `<div class="sec-card">
+  <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:6px;"><div class="node-func">+</div><span class="lbl">function node (internal) — has children</span></div>
+    <div style="display:flex;align-items:center;gap:6px;"><div class="node-term">x</div><span class="lbl">terminal node (leaf) — no children</span></div>
+  </div>
+  ${treeA()}
+  <p style="font-size:13px;color:var(--color-text-secondary);margin:10px 0 0;">This tree represents: <code style="font-size:12px;">(a * c) / (a - b)</code>. Root is the last operation evaluated.</p>
+</div>`;
+}},
+{title:'Step 3 — function set and terminal set',
+caption:'Before GP runs you define what can appear in trees. The function set = operators (internal nodes). The terminal set = variables and constants (leaves). Closure means outputs are always valid inputs. Sufficiency means the sets can express the solution.',
+render(){
+return `<div class="sec-card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div>
+      <p class="lbl" style="margin:0 0 8px;font-weight:500;">Function set</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${['+','-','*','/'].map(f=>`<div class="node-func">${f}</div>`).join('')}</div>
+      <p class="lbl" style="margin:8px 0 0;">Operators — become internal nodes. Each has an arity (number of inputs).</p>
+    </div>
+    <div>
+      <p class="lbl" style="margin:0 0 8px;font-weight:500;">Terminal set</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${['x','y','3','5'].map(t=>`<div class="node-term">${t}</div>`).join('')}</div>
+      <p class="lbl" style="margin:8px 0 0;">Variables and constants — become leaf nodes.</p>
+    </div>
+  </div>
+  <div style="border-top:0.5px solid var(--color-border-tertiary);margin-top:12px;padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div><p class="lbl" style="margin:0 0 4px;font-weight:500;">Closure</p><p class="lbl" style="margin:0;">Every function output is a valid input to every other function. Use protected division (returns 1 when dividing by zero) to maintain closure.</p></div>
+    <div><p class="lbl" style="margin:0 0 4px;font-weight:500;">Sufficiency</p><p class="lbl" style="margin:0;">The sets must contain enough primitives to express the target solution. If sin() is needed, it must be in the function set.</p></div>
+  </div>
+</div>`;
+}},
+{title:'Step 4 — tree generation methods',
+caption:'The initial population is built using one of three methods. Full makes complete symmetric trees. Grow makes irregular trees. Ramped Half-and-Half combines both across a range of depths for maximum diversity — this is the standard in practice.',
+render(){
+return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+  <div class="sec-card" style="text-align:center;">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;">Full method</p>
+    ${fullTree()}
+    <p class="lbl" style="margin:8px 0 0;">All leaves at max depth. Bushy, symmetric.</p>
+  </div>
+  <div class="sec-card" style="text-align:center;">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;">Grow method</p>
+    ${growTree()}
+    <p class="lbl" style="margin:8px 0 0;">Branches end at different depths. Asymmetric.</p>
+  </div>
+  <div class="sec-card" style="text-align:center;border:1.5px solid #7F77DD;">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;color:#3C3489;">Ramped half-and-half</p>
+    <p class="lbl" style="margin:0 0 8px;">50% Full + 50% Grow across depths 2–6</p>
+    <div style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap;">
+      ${[2,3,4,5,6].map(d=>`<div style="font-size:11px;padding:3px 7px;border-radius:var(--border-radius-md);background:#EEEDFE;color:#3C3489;">depth ${d}</div>`).join('')}
+    </div>
+    <p class="lbl" style="margin:8px 0 0;">Maximum diversity. Most widely used.</p>
+  </div>
+</div>`;
+}},
+{title:'Step 5 — tree traversals',
+caption:'Given a tree you can read it in three orders. Preorder visits root first (prefix). Inorder visits root between children (infix — normal math). Postorder visits root last (suffix — how a stack machine executes). All three produce valid representations of the same expression.',
+render(){
+return `<div class="sec-card">
+  <div style="margin-bottom:12px;">${treeA()}</div>
+  <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 4px;">Expression: <code style="font-size:12px;">(a * c) / (a - b)</code></p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;">
+    <div>
+      <p class="lbl" style="margin:0 0 6px;font-weight:500;">Preorder (prefix)</p>
+      <p class="lbl" style="margin:0 0 4px;">Root → Left → Right</p>
+      <div class="traversal-seq">${['/',  '*','a','c','-','a','b'].map((n,i)=>
+        `<div class="tnode ${['/','*','-'].includes(n)?'func':'term'}">${n}</div>`).join('')}</div>
+      <p class="lbl" style="margin:6px 0 0;">/ * a c - a b</p>
+    </div>
+    <div>
+      <p class="lbl" style="margin:0 0 6px;font-weight:500;">Inorder (infix)</p>
+      <p class="lbl" style="margin:0 0 4px;">Left → Root → Right</p>
+      <div class="traversal-seq">${['a','*','c','/','a','-','b'].map(n=>
+        `<div class="tnode ${['/','*','-'].includes(n)?'func':'term'}">${n}</div>`).join('')}</div>
+      <p class="lbl" style="margin:6px 0 0;">a * c / a - b</p>
+    </div>
+    <div>
+      <p class="lbl" style="margin:0 0 6px;font-weight:500;">Postorder (suffix)</p>
+      <p class="lbl" style="margin:0 0 4px;">Left → Right → Root</p>
+      <div class="traversal-seq">${['a','c','*','a','b','-','/'].map(n=>
+        `<div class="tnode ${['/','*','-'].includes(n)?'func':'term'}">${n}</div>`).join('')}</div>
+      <p class="lbl" style="margin:6px 0 0;">a c * a b - /</p>
+    </div>
+  </div>
+</div>`;
+}},
+{title:'Step 6 — crossover: subtree swap',
+caption:'Two parent trees are selected. A random node is picked in each. The subtrees rooted at those nodes are swapped. This produces two offspring. One inherits most of P1 with a branch from P2 grafted in, and vice versa.',
+render(){
+return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;color:#3C3489;">Parent 1 — crossover point: * (highlighted)</p>
+    ${treeACrossover()}
+    <p class="lbl" style="margin:8px 0 0;">Expression: (a*c) / (a-b)</p>
+  </div>
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;color:#085041;">Parent 2 — crossover point: + (highlighted)</p>
+    ${treeBCrossover()}
+    <p class="lbl" style="margin:8px 0 0;">Expression: x + y</p>
+  </div>
+</div>
+<div style="text-align:center;padding:6px 0;font-size:13px;color:var(--color-text-secondary);">Swap the highlighted subtrees</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;">Offspring 1</p>
+    ${treeOff1()}
+    <p class="lbl" style="margin:8px 0 0;">Expression: (x+y) / (a-b)</p>
+  </div>
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 8px;font-weight:500;">Offspring 2</p>
+    ${treeOff2()}
+    <p class="lbl" style="margin:8px 0 0;">Expression: a * c</p>
+  </div>
+</div>`;
+}},
+{title:'Step 7 — mutation: grow and shrink',
+caption:'Grow mutation replaces a terminal leaf with a randomly generated subtree — the tree gets bigger and explores new structure. Shrink mutation replaces a subtree with a single terminal — the tree gets smaller and simpler. Both are applied at a low rate after crossover.',
+render(){
+return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 4px;font-weight:500;">Grow mutation</p>
+    <p class="lbl" style="margin:0 0 8px;">Terminal 'c' (orange) replaced with subtree x+3</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start;">
+      <div><p class="lbl" style="margin:0 0 4px;">Before</p>${treeMutBefore()}</div>
+      <div><p class="lbl" style="margin:0 0 4px;">After</p>${treeMutGrowAfter()}</div>
+    </div>
+  </div>
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 4px;font-weight:500;">Shrink mutation</p>
+    <p class="lbl" style="margin:0 0 8px;">Subtree * (orange) replaced with terminal 5</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start;">
+      <div><p class="lbl" style="margin:0 0 4px;">Before</p>${treeMutBefore()}</div>
+      <div><p class="lbl" style="margin:0 0 4px;">After</p>${treeMutShrinkAfter()}</div>
+    </div>
+  </div>
+</div>`;
+}},
+{title:'Step 8 — fitness, replacement and termination',
+caption:'Fitness in GP is problem-dependent. For symbolic regression, Sum of Absolute Errors (SAE) measures how far the program output is from the target data — lower is better. Replacement and termination work identically to GA: generational or steady-state replacement, elitism to preserve the best tree, stop when SAE reaches threshold or max generations hit.',
+render(){
+const data=[{x:1,target:3,prog:3.1},{x:2,target:7,prog:6.6},{x:3,target:13,prog:13.4},{x:4,target:21,prog:20.8}];
+const sae=data.reduce((s,d)=>s+Math.abs(d.target-d.prog),0).toFixed(1);
+return `<div class="sec-card">
+  <p class="lbl" style="margin:0 0 8px;font-weight:500;">Fitness example — symbolic regression</p>
+  <p class="lbl" style="margin:0 0 10px;">Program being evaluated: <code style="font-size:12px;">2*x*x - x + 1</code> &nbsp; Target: <code style="font-size:12px;">2x² - x + 1</code></p>
+  <table style="width:100%;font-size:13px;border-collapse:collapse;">
+    <tr style="border-bottom:0.5px solid var(--color-border-tertiary);">
+      <td class="lbl" style="padding:4px 0;">x</td>
+      <td class="lbl" style="padding:4px 0;text-align:center;">target</td>
+      <td class="lbl" style="padding:4px 0;text-align:center;">program output</td>
+      <td class="lbl" style="padding:4px 0;text-align:center;">|error|</td>
+    </tr>
+    ${data.map(d=>`<tr style="border-bottom:0.5px solid var(--color-border-tertiary);">
+      <td style="padding:4px 0;color:var(--color-text-primary);">${d.x}</td>
+      <td style="padding:4px 0;text-align:center;">${d.target}</td>
+      <td style="padding:4px 0;text-align:center;">${d.prog}</td>
+      <td style="padding:4px 0;text-align:center;color:#993C1D;">${Math.abs(d.target-d.prog).toFixed(1)}</td>
+    </tr>`).join('')}
+  </table>
+  <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+    <span class="lbl">SAE =</span>
+    <span style="font-size:18px;font-weight:500;color:#3C3489;">${sae}</span>
+    <span class="lbl">— lower is better, 0.0 = perfect fit</span>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+  <div class="sec-card"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Replacement</p><p class="lbl" style="margin:0;">Generational (full swap) or steady-state (replace weakest). Elitism keeps the best tree unchanged.</p></div>
+  <div class="sec-card"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Termination</p><p class="lbl" style="margin:0;">SAE below threshold, max generations reached, or no improvement for N generations.</p></div>
+  <div class="sec-card"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Same as GA</p><p class="lbl" style="margin:0;">The loop structure is identical — only the individuals and operators differ.</p></div>
+</div>`;
+}},
+{title:'Step 9 — bloat',
+caption:'Over generations, trees grow larger without improving fitness. Extra nodes accumulate that do not affect output — called introns. This wastes computation. Two solutions: a hard max depth limit that prunes oversized offspring, and parsimony pressure which adds a size penalty to the fitness function so big trees must earn their size.',
+render(){
+return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 6px;font-weight:500;">Generation 1 — small, efficient tree</p>
+    ${treeA()}
+    <p class="lbl" style="margin:8px 0 0;">6 nodes — fitness 0.4 SAE</p>
+  </div>
+  <div class="sec-card">
+    <p class="lbl" style="margin:0 0 6px;font-weight:500;">Generation 20 — bloated tree, same fitness</p>
+    ${treeBloat()}
+    <p class="lbl" style="margin:8px 0 0;">12+ nodes — fitness still 0.4 SAE. Extra nodes are introns.</p>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px;">
+  <div class="sec-card"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Max depth limit</p><p class="lbl" style="margin:0;">Hard cap — any offspring exceeding max depth is pruned back. Simple and effective.</p></div>
+  <div class="sec-card"><p class="lbl" style="margin:0 0 4px;font-weight:500;">Parsimony pressure</p><p class="lbl" style="margin:0;">Add size penalty to fitness. A larger tree must outperform a smaller one to survive selection.</p></div>
+</div>`;
+}}
+];
+
+function treeA(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:40px;">
+      <div class="edge"></div><div class="edge"></div>
+    </div>
+    <div class="tree-row"><div class="node-func">*</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:8px;">
+      <div class="edge"></div><div class="edge"></div><div style="width:20px;"></div><div class="edge"></div><div class="edge"></div>
+    </div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-term">c</div><div class="node-term">a</div><div class="node-term">b</div></div>
+  </div>`;
+}
+function fullTree(){
+  return `<div style="text-align:center;font-size:12px;">
+    <div class="tree-row"><div class="node-func">+</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">*</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:8px;"><div class="edge"></div><div class="edge"></div><div style="width:14px"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-term">b</div><div class="node-term">c</div><div class="node-term">d</div></div>
+  </div>`;
+}
+function growTree(){
+  return `<div style="text-align:center;font-size:12px;">
+    <div class="tree-row"><div class="node-func">*</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">+</div><div class="node-term">x</div></div>
+    <div style="display:flex;justify-content:center;gap:4px;margin-left:-24px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row" style="justify-content:flex-start;padding-left:20px;gap:10px;"><div class="node-term">a</div><div class="node-term">b</div></div>
+  </div>`;
+}
+function treeACrossover(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:40px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-highlight">*</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:8px;"><div class="edge"></div><div class="edge"></div><div style="width:20px;"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-term">c</div><div class="node-term">a</div><div class="node-term">b</div></div>
+  </div>`;
+}
+function treeBCrossover(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-highlight">+</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">x</div><div class="node-term">y</div></div>
+  </div>`;
+}
+function treeOff1(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:40px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">+</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:8px;"><div class="edge"></div><div class="edge"></div><div style="width:20px;"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">x</div><div class="node-term">y</div><div class="node-term">a</div><div class="node-term">b</div></div>
+  </div>`;
+}
+function treeOff2(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">*</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-term">c</div></div>
+  </div>`;
+}
+function treeMutBefore(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">*</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:4px;"><div class="edge"></div><div class="edge"></div><div style="width:14px"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-highlight">c</div><div class="node-term">a</div><div class="node-term">b</div></div>
+  </div>`;
+}
+function treeMutGrowAfter(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">*</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:4px;"><div class="edge"></div><div class="edge"></div><div style="width:14px"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-highlight">+</div><div class="node-term">a</div><div class="node-term">b</div></div>
+    <div style="display:flex;justify-content:center;margin-left:-60px;gap:4px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row" style="justify-content:flex-start;padding-left:34px;gap:8px;"><div class="node-term">x</div><div class="node-term">3</div></div>
+  </div>`;
+}
+function treeMutShrinkAfter(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-highlight">5</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:4px;margin-left:30px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row" style="justify-content:flex-end;padding-right:8px;gap:8px;"><div class="node-term">a</div><div class="node-term">b</div></div>
+  </div>`;
+}
+function treeBloat(){
+  return `<div style="text-align:center;">
+    <div class="tree-row"><div class="node-func">/</div></div>
+    <div style="display:flex;justify-content:center;gap:40px;"><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">*</div><div class="node-func">-</div></div>
+    <div style="display:flex;justify-content:center;gap:8px;"><div class="edge"></div><div class="edge"></div><div style="width:20px;"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-func">+</div><div class="node-term">c</div><div class="node-func">*</div><div class="node-term">b</div></div>
+    <div style="display:flex;justify-content:center;gap:4px;"><div class="edge"></div><div class="edge"></div><div style="width:36px"></div><div class="edge"></div><div class="edge"></div></div>
+    <div class="tree-row"><div class="node-term">a</div><div class="node-term">0</div><div class="node-term">a</div><div class="node-term">1</div></div>
+    <p style="font-size:11px;color:#993C1D;margin:4px 0 0;">a+0 = a, a*1 = a — introns, no effect</p>
+  </div>`;
+}
+
+let stepIdx=0;
+function render(){
+  const step=STEPS[stepIdx];
+  const total=STEPS.length;
+  const pct=Math.round(stepIdx/(total-1)*100);
+  document.getElementById('gp-root').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+      <div style="flex:1;height:4px;background:var(--color-background-secondary);border-radius:2px;">
+        <div style="width:${pct}%;height:4px;background:#7F77DD;border-radius:2px;transition:width 0.3s;"></div>
+      </div>
+      <span class="lbl">${stepIdx+1} / ${total}</span>
+    </div>
+    <span class="step-pill">Step ${stepIdx+1} of ${total}</span>
+    <h3 style="margin:0 0 10px;font-size:16px;font-weight:500;">${step.title}</h3>
+    <div class="caption-box"><p class="caption-body">${step.caption}</p></div>
+    <div>${step.render()}</div>
+    <div style="display:flex;gap:10px;margin-top:20px;align-items:center;">
+      <button class="gp-btn" onclick="prev()" ${stepIdx===0?'disabled':''}>
+        <i class="ti ti-arrow-left" aria-hidden="true"></i> Back
+      </button>
+      <button class="gp-btn primary" onclick="next()" ${stepIdx===total-1?'disabled':''}>
+        ${stepIdx===total-1?'Done':'Next step'} <i class="ti ti-arrow-right" aria-hidden="true"></i>
+      </button>
+    </div>`;
+}
+function next(){if(stepIdx<STEPS.length-1){stepIdx++;render();}}
+function prev(){if(stepIdx>0){stepIdx--;render();}}
+render();
+</script>
