@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GA Full Walkthrough</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 18px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f1117;
+    color: #e0d8c8;
+  }
+  :root {
+    --color-border-secondary: #252830;
+    --color-border-tertiary: #1e2028;
+    --color-background-primary: #0f1117;
+    --color-background-secondary: #1c1f2b;
+    --color-text-primary: #e0d8c8;
+    --color-text-secondary: #a0988a;
+    --border-radius-md: 6px;
+    --border-radius-lg: 10px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .ga-btn { padding: 8px 18px; border: 0.5px solid var(--color-border-secondary); background: transparent; border-radius: var(--border-radius-md); cursor: pointer; font-size: 14px; font-weight: 500; color: var(--color-text-primary); transition: background 0.15s; }
+  .ga-btn:hover { background: var(--color-background-secondary); }
+  .ga-btn:disabled { opacity: 0.35; cursor: default; }
+  .ga-btn.primary { background: #EEEDFE; border-color: #7F77DD; color: #26215C; }
+  .ga-btn.primary:hover { background: #CECBF6; }
+  .chrom { display: inline-flex; gap: 3px; align-items: center; }
+  .gene { width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); color: var(--color-text-primary); transition: background 0.3s, color 0.3s, border-color 0.3s; }
+  .gene.p1 { background: #EEEDFE; border-color: #7F77DD; color: #26215C; }
+  .gene.p2 { background: #E1F5EE; border-color: #1D9E75; color: #04342C; }
+  .gene.mutated { background: #FAECE7; border-color: #D85A30; color: #4A1B0C; }
+  .gene.correct { background: #EAF3DE; border-color: #639922; color: #173404; }
+  .pop-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .pop-row:last-child { border-bottom: none; }
+  .pop-row.highlight { background: #EEEDFE; border-radius: var(--border-radius-md); padding: 6px 8px; margin: 0 -8px; }
+  .pop-row.winner-row { background: #EAF3DE; border-radius: var(--border-radius-md); padding: 6px 8px; margin: 0 -8px; }
+  .caption-box { border-left: 3px solid #7F77DD; border-radius: 0; padding: 10px 14px; background: #EEEDFE; margin-bottom: 16px; }
+  .caption-title { font-size: 13px; font-weight: 500; color: #3C3489; margin: 0 0 2px; }
+  .caption-body { font-size: 13px; color: #534AB7; margin: 0; line-height: 1.5; }
+  .step-pill { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; background: #EEEDFE; color: #3C3489; margin-bottom: 10px; }
+  .fitness-bar-wrap { flex: 1; height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; max-width: 80px; }
+  .fitness-bar { height: 8px; border-radius: 4px; background: #7F77DD; transition: width 0.4s; }
+  .section-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px 16px; margin-bottom: 12px; }
+  .cut-marker { width: 3px; height: 26px; background: #D85A30; border-radius: 2px; margin: 0 2px; }
+  .label-sm { font-size: 12px; color: var(--color-text-secondary); }
+</style>
+</head>
+<body>
+<h2 class="sr-only">Step-by-step genetic algorithm walkthrough covering initialisation, fitness, selection, crossover, mutation, and replacement</h2>
+
+<div style="padding: 1rem 0;" id="ga-root"></div>
+
+<script>
+const TARGET = [1,1,1,1,1,1];
+const POP_SIZE = 6;
+const CHROM_LEN = 6;
+const TOURNEY_SIZE = 3;
+const CROSS_RATE = 0.85;
+const MUT_RATE = 0.15;
+
+function randBit() { return Math.random() < 0.5 ? 1 : 0; }
+function fitness(c) { return c.reduce((s,b,i)=>s+(b===TARGET[i]?1:0),0); }
+function binToDec(c) { return parseInt(c.join(''),2); }
+
+function makePop() {
+  const fixed = [[1,0,1,0,0,1],[0,1,1,0,1,0],[1,1,0,1,0,0],[0,0,1,0,1,1],[1,1,1,0,1,0],[0,1,0,1,1,1]];
+  return fixed.map(c=>({genes:[...c], fitness:fitness(c)}));
+}
+
+function tournament(pop) {
+  const contestants = [...pop].sort(()=>Math.random()-0.5).slice(0,TOURNEY_SIZE);
+  return contestants.reduce((b,p)=>p.fitness>b.fitness?p:b, contestants[0]);
+}
+
+function crossover(p1, p2) {
+  const pt = 1 + Math.floor(Math.random()*(CHROM_LEN-2));
+  const o1 = [...p1.genes.slice(0,pt), ...p2.genes.slice(pt)];
+  const o2 = [...p2.genes.slice(0,pt), ...p1.genes.slice(pt)];
+  return {o1, o2, pt};
+}
+
+function mutate(genes) {
+  const result = [...genes];
+  const mutIdx = [];
+  result.forEach((_,i)=>{ if(Math.random()<MUT_RATE){ result[i]=1-result[i]; mutIdx.push(i); } });
+  return {genes: result, mutIdx};
+}
+
+function geneEl(val, cls='') {
+  return `<div class="gene ${cls}">${val}</div>`;
+}
+
+function chromEl(genes, highlights={}) {
+  return `<div class="chrom">${genes.map((g,i)=>geneEl(g, highlights[i]||'')).join('')}</div>`;
+}
+
+function chromWithCut(genes1, genes2, pt, role1, role2) {
+  let html = '<div class="chrom">';
+  genes1.forEach((g,i)=>{ html+=geneEl(g,i<pt?role1:role2); if(i===pt-1) html+='<div class="cut-marker"></div>'; });
+  html+='</div>';
+  return html;
+}
+
+const STEPS = [
+  {
+    id:'init',
+    title:'Step 1 — initialise population',
+    caption:'We start by randomly creating 6 chromosomes, each 6 bits long. Each bit is a gene. The target we are searching for is 111111. Fitness = how many bits match the target.',
+    render(state) {
+      let html = '';
+      state.pop.forEach((p,i)=>{
+        const correct = p.genes.map((g,j)=>g===TARGET[j]);
+        const hls = {};
+        p.genes.forEach((_,j)=>{ if(correct[j]) hls[j]='correct'; });
+        html += `<div class="pop-row">
+          <span class="label-sm" style="width:28px">P${i+1}</span>
+          ${chromEl(p.genes, hls)}
+          <div class="fitness-bar-wrap"><div class="fitness-bar" style="width:${p.fitness/6*100}%"></div></div>
+          <span class="label-sm">fitness ${p.fitness}/6</span>
+        </div>`;
+      });
+      return `<div class="section-card">${html}</div>
+        <p class="label-sm" style="margin:4px 0 0">Green genes match the target. We need fitness = 6 to reach 111111.</p>`;
+    }
+  },
+  {
+    id:'select',
+    title:'Step 2 — select parents (tournament, size 3)',
+    caption:'Randomly pick 3 individuals for each tournament. The fittest contestant wins and becomes a parent. We run two tournaments to get Parent 1 and Parent 2.',
+    render(state) {
+      const t1 = state.t1, t2 = state.t2, p1 = state.p1, p2 = state.p2;
+      function tBlock(label, contestants, winner) {
+        return `<div class="section-card">
+          <p class="label-sm" style="margin:0 0 8px;font-weight:500;">${label}</p>
+          ${contestants.map((p,i)=>{
+            const isWin = p===winner;
+            return `<div class="pop-row ${isWin?'winner-row':''}">
+              <span class="label-sm" style="width:60px">${isWin?'winner':'contestant'}</span>
+              ${chromEl(p.genes)}
+              <div class="fitness-bar-wrap"><div class="fitness-bar" style="width:${p.fitness/6*100}%;background:${isWin?'#1D9E75':'#7F77DD'}"></div></div>
+              <span class="label-sm">fitness ${p.fitness}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }
+      return tBlock('Tournament 1 → Parent 1', t1, p1) + tBlock('Tournament 2 → Parent 2', t2, p2);
+    }
+  },
+  {
+    id:'crossover',
+    title:'Step 3 — crossover (one-point)',
+    caption:`A random cut point is chosen. Parent 1 contributes everything to the left of the cut; Parent 2 contributes everything to the right. This produces two offspring. The crossover rate is ${Math.round(CROSS_RATE*100)}% — most pairs cross over.`,
+    render(state) {
+      const {p1,p2,crossPt,o1genes,o2genes} = state;
+      return `<div class="section-card">
+        <div class="pop-row">
+          <span class="label-sm" style="width:70px;color:#3C3489;font-weight:500;">Parent 1</span>
+          ${chromWithCut(p1.genes, p2.genes, crossPt,'p1','p1')}
+          <span class="label-sm">fitness ${p1.fitness}</span>
+        </div>
+        <div class="pop-row">
+          <span class="label-sm" style="width:70px;color:#085041;font-weight:500;">Parent 2</span>
+          ${chromWithCut(p2.genes, p1.genes, crossPt,'p2','p2')}
+          <span class="label-sm">fitness ${p2.fitness}</span>
+        </div>
+        <div style="margin:8px 0 4px;padding:6px 0;border-top:0.5px solid var(--color-border-tertiary);">
+          <span class="label-sm">Cut point: after position ${crossPt} &nbsp;|&nbsp; <span style="color:#3C3489;">purple</span> = from P1 &nbsp;|&nbsp; <span style="color:#085041;">teal</span> = from P2</span>
+        </div>
+        <div class="pop-row">
+          <span class="label-sm" style="width:70px;">Offspring 1</span>
+          ${chromWithCut(o1genes, o1genes, crossPt,'p1','p2')}
+          <span class="label-sm">fitness ${fitness(o1genes)}</span>
+        </div>
+        <div class="pop-row">
+          <span class="label-sm" style="width:70px;">Offspring 2</span>
+          ${chromWithCut(o2genes, o2genes, crossPt,'p2','p1')}
+          <span class="label-sm">fitness ${fitness(o2genes)}</span>
+        </div>
+      </div>`;
+    }
+  },
+  {
+    id:'mutate',
+    title:'Step 4 — mutation (bit-flip)',
+    caption:`Each gene independently has a ${Math.round(MUT_RATE*100)}% chance of flipping. Mutation injects new diversity and stops the population getting stuck. Orange = flipped gene. Most genes are untouched.`,
+    render(state) {
+      const {o1genes, o2genes, m1, m2} = state;
+      function mutRow(label, before, after, mutIdx) {
+        const hAfter = {};
+        mutIdx.forEach(i=>hAfter[i]='mutated');
+        const hBefore = {};
+        mutIdx.forEach(i=>hBefore[i]='mutated');
+        return `<div class="section-card">
+          <p class="label-sm" style="margin:0 0 8px;font-weight:500;">${label}</p>
+          <div class="pop-row">
+            <span class="label-sm" style="width:50px;">Before</span>
+            ${chromEl(before, hBefore)}
+          </div>
+          <div class="pop-row">
+            <span class="label-sm" style="width:50px;">After</span>
+            ${chromEl(after.genes, hAfter)}
+            <span class="label-sm">${mutIdx.length===0?'no bits flipped':mutIdx.length+' bit(s) flipped at position '+(mutIdx.map(i=>i+1).join(', '))}</span>
+          </div>
+        </div>`;
+      }
+      return mutRow('Offspring 1', o1genes, m1, m1.mutIdx) + mutRow('Offspring 2', o2genes, m2, m2.mutIdx);
+    }
+  },
+  {
+    id:'evaluate',
+    title:'Step 5 — evaluate fitness of offspring',
+    caption:'Now we score the new offspring. Green genes match the target 111111. We compare their fitness to the parents — if they are better, evolution is working.',
+    render(state) {
+      const {p1,p2,m1,m2} = state;
+      const rows = [
+        {label:'Parent 1 (old)', genes:p1.genes, f:p1.fitness, dim:true},
+        {label:'Parent 2 (old)', genes:p2.genes, f:p2.fitness, dim:true},
+        {label:'Offspring 1 (new)', genes:m1.genes, f:fitness(m1.genes), dim:false},
+        {label:'Offspring 2 (new)', genes:m2.genes, f:fitness(m2.genes), dim:false},
+      ];
+      return `<div class="section-card">${rows.map(r=>{
+        const hls = {};
+        r.genes.forEach((g,i)=>{ if(g===TARGET[i]) hls[i]='correct'; });
+        return `<div class="pop-row" style="${r.dim?'opacity:0.45':''}">
+          <span class="label-sm" style="width:120px;">${r.label}</span>
+          ${chromEl(r.genes,hls)}
+          <div class="fitness-bar-wrap"><div class="fitness-bar" style="width:${r.f/6*100}%"></div></div>
+          <span class="label-sm">fitness ${r.f}/6</span>
+        </div>`;
+      }).join('')}</div>`;
+    }
+  },
+  {
+    id:'replace',
+    title:'Step 6 — replace population',
+    caption:'The old population is replaced by the new generation of offspring (generational replacement). The best individual is always kept via elitism. This is now generation 2 — we loop back and repeat.',
+    render(state) {
+      const {newPop} = state;
+      const best = newPop.reduce((b,p)=>p.fitness>b.fitness?p:b, newPop[0]);
+      let html = '';
+      newPop.forEach((p,i)=>{
+        const isB = p===best;
+        const hls = {};
+        p.genes.forEach((g,j)=>{ if(g===TARGET[j]) hls[j]='correct'; });
+        html += `<div class="pop-row ${isB?'winner-row':''}">
+          <span class="label-sm" style="width:60px">${isB?'best':'P'+(i+1)}</span>
+          ${chromEl(p.genes,hls)}
+          <div class="fitness-bar-wrap"><div class="fitness-bar" style="width:${p.fitness/6*100}%;background:${isB?'#1D9E75':'#7F77DD'}"></div></div>
+          <span class="label-sm">fitness ${p.fitness}/6</span>
+        </div>`;
+      });
+      const solved = newPop.some(p=>p.fitness===6);
+      return `<div class="section-card">${html}</div>
+        ${solved?`<div style="border:0.5px solid #639922;border-radius:var(--border-radius-lg);padding:12px 16px;background:#EAF3DE;margin-top:8px;">
+          <span style="font-size:14px;font-weight:500;color:#27500A;">Target 111111 found! Algorithm terminates and returns the best individual.</span>
+        </div>`:'<p class="label-sm" style="margin:6px 0 0">Best fitness this generation: '+best.fitness+'/6. Loop continues — select new parents from this population and repeat.</p>'}`;
+    }
+  }
+];
+
+let stepIdx = 0;
+let state = {};
+
+function buildState() {
+  const pop = makePop();
+  const t1 = [...pop].sort(()=>Math.random()-0.5).slice(0,TOURNEY_SIZE);
+  const p1 = t1.reduce((b,p)=>p.fitness>b.fitness?p:b,t1[0]);
+  const t2 = [...pop].sort(()=>Math.random()-0.5).slice(0,TOURNEY_SIZE);
+  const p2 = t2.reduce((b,p)=>p.fitness>b.fitness?p:b,t2[0]);
+  const {o1,o2,pt} = crossover(p1,p2);
+  const m1 = mutate(o1);
+  const m2 = mutate(o2);
+  const f1 = fitness(m1.genes), f2 = fitness(m2.genes);
+  const allOff = [m1,m2];
+  const rest = [...pop].filter(p=>p!==p1&&p!==p2).sort(()=>Math.random()-0.5);
+  const newPop = [...allOff.map(o=>({genes:o.genes,fitness:fitness(o.genes)})), ...rest.slice(0,4).map(p=>({...p}))];
+  const elite = pop.reduce((b,p)=>p.fitness>b.fitness?p:b,pop[0]);
+  if(!newPop.some(p=>p===elite)) newPop[newPop.length-1]=elite;
+  newPop.forEach(p=>p.fitness=fitness(p.genes));
+  return {pop,t1,t2,p1,p2,crossPt:pt,o1genes:o1,o2genes:o2,m1,m2,newPop};
+}
+
+function render() {
+  const step = STEPS[stepIdx];
+  const root = document.getElementById('ga-root');
+  const totalSteps = STEPS.length;
+  const progressPct = Math.round((stepIdx/(totalSteps-1))*100);
+  root.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+      <div style="flex:1;height:4px;background:var(--color-background-secondary);border-radius:2px;">
+        <div style="width:${progressPct}%;height:4px;background:#7F77DD;border-radius:2px;transition:width 0.3s;"></div>
+      </div>
+      <span class="label-sm">${stepIdx+1} / ${totalSteps}</span>
+    </div>
+    <span class="step-pill">Step ${stepIdx+1} of ${totalSteps}</span>
+    <h3 style="margin:0 0 10px;font-size:16px;font-weight:500;">${step.title}</h3>
+    <div class="caption-box">
+      <p class="caption-body">${step.caption}</p>
+    </div>
+    <div id="step-content">${step.render(state)}</div>
+    <div style="display:flex;gap:10px;margin-top:20px;align-items:center;">
+      <button class="ga-btn" onclick="prev()" ${stepIdx===0?'disabled':''}>
+        <i class="ti ti-arrow-left" aria-hidden="true"></i> Back
+      </button>
+      <button class="ga-btn primary" onclick="next()" ${stepIdx===totalSteps-1?'disabled':''}>
+        ${stepIdx===totalSteps-1?'Done':'Next step'} <i class="ti ti-arrow-right" aria-hidden="true"></i>
+      </button>
+      <button class="ga-btn" onclick="restart()" style="margin-left:auto;">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Restart with new population
+      </button>
+    </div>`;
+}
+
+function next() { if(stepIdx<STEPS.length-1){ stepIdx++; render(); } }
+function prev() { if(stepIdx>0){ stepIdx--; render(); } }
+function restart() { stepIdx=0; state=buildState(); render(); }
+
+state = buildState();
+render();
+</script>
+</body>
+</html>

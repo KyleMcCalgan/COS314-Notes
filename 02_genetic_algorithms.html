@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #2ea66f; --accent2: #b84a69; --accent3: #bf8731; }
   .hero::before { content: '02'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -230,6 +237,12 @@ After:  1 1 1 1 1 0</div>
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Full GA Walkthrough</h2>
+    <p>This walkthrough runs through a full mini genetic-algorithm cycle: initial population, fitness, tournament parent selection, crossover, mutation, offspring evaluation, and replacement into the next generation.</p>
+    <iframe class="demo-frame" src="demos/ST2/ga_full_walkthrough.html" title="Full Genetic Algorithm Walkthrough" style="height: 980px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Exam Checklist</h2>
     <ul class="checklist">
       <li class="done">Explain why GA is population-based rather than single-solution search.</li>
@@ -243,6 +256,15 @@ After:  1 1 1 1 1 0</div>
   <div class="nav-hint">Semester II scope section 2 of 6</div>
 </div>
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      this.style.height = this.contentDocument.documentElement.scrollHeight + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 <script>
 (function(){
   const bar = document.createElement('div');
