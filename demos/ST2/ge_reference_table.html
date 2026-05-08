@@ -1,0 +1,194 @@
+<style>
+  .gb{padding:7px 14px;border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);cursor:pointer;font-size:12px;font-weight:500;color:var(--color-text-primary);}
+  .gb:hover{background:var(--color-background-secondary);}
+  .gb.pri{background:#EEEDFE;border-color:#7F77DD;color:#26215C;}
+  .sec-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin:16px 0 8px;padding-bottom:4px;border-bottom:0.5px solid var(--color-border-tertiary);}
+  .row{display:grid;grid-template-columns:160px 1fr;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);}
+  .row:last-child{border-bottom:none;}
+  .kw{padding:8px 10px;font-size:12px;font-weight:500;color:var(--color-text-primary);background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);}
+  .def{padding:8px 12px;font-size:12px;color:var(--color-text-secondary);line-height:1.5;}
+  .def code{font-family:var(--font-mono);font-size:11px;background:var(--color-background-secondary);padding:1px 4px;border-radius:3px;color:var(--color-text-primary);}
+  .tbl{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .tab-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+</style>
+
+<h2 class="sr-only">Complete GE reference table covering all key concepts keywords formulas and processes</h2>
+
+<div style="padding:1rem 0;">
+  <div class="tab-row">
+    <button class="gb pri" id="tab-core" onclick="sw('core')">Core concepts</button>
+    <button class="gb" id="tab-grammar" onclick="sw('grammar')">Grammar & BNF</button>
+    <button class="gb" id="tab-mapping" onclick="sw('mapping')">Mapping process</button>
+    <button class="gb" id="tab-ops" onclick="sw('ops')">Operators & algorithm</button>
+    <button class="gb" id="tab-vs" onclick="sw('vs')">GE vs GP</button>
+  </div>
+
+  <div class="panel active" id="panel-core">
+    <div class="tbl">
+      <div class="row" style="background:var(--color-background-secondary);"><div class="kw" style="background:transparent;border-right-color:var(--color-border-secondary);">Term</div><div class="def" style="color:var(--color-text-primary);font-weight:500;">Definition</div></div>
+      <div class="row"><div class="kw">Grammatical Evolution</div><div class="def">An evolutionary algorithm that searches the program space using variable-length binary string chromosomes decoded into programs via a BNF grammar. It extends the GP idea by separating genotype and phenotype.</div></div>
+      <div class="row"><div class="kw">Genotype</div><div class="def">The binary string chromosome that gets evolved. Crossover and mutation operate here. It is not directly evaluated for fitness.</div></div>
+      <div class="row"><div class="kw">Phenotype</div><div class="def">The executable program produced after decoding the genotype through the grammar. This is what gets evaluated against the fitness cases.</div></div>
+      <div class="row"><div class="kw">Codon</div><div class="def">One 8-bit chunk of the chromosome. Convert it to decimal, then use the mapping equation to select a grammar rule. Each codon answers one grammar decision.</div></div>
+      <div class="row"><div class="kw">Codon value range</div><div class="def">0 to 255. Modulo maps any value to a valid rule index no matter how many rules the current non-terminal has.</div></div>
+      <div class="row"><div class="kw">Variable-length string</div><div class="def">Chromosomes in GE do not all have the same length. Each individual can contain a different number of codons.</div></div>
+      <div class="row"><div class="kw">Program space</div><div class="def">The search space GE explores: all programs expressible by the grammar.</div></div>
+      <div class="row"><div class="kw">Derivation</div><div class="def">The process of converting genotype to phenotype by consuming codons and expanding non-terminals.</div></div>
+      <div class="row"><div class="kw">Wrapping</div><div class="def">If codons run out before derivation is complete, mapping loops back to the start of the codon sequence. If the phenotype is still incomplete after the allowed wraps, the individual is invalid.</div></div>
+      <div class="row"><div class="kw">Invalid individual</div><div class="def">A chromosome that fails to produce a complete phenotype. It is usually assigned the worst fitness so that selection removes it.</div></div>
+      <div class="row"><div class="kw">Fitness function</div><div class="def">Problem-dependent scoring function applied to the phenotype. In symbolic regression this is often SAE.</div></div>
+      <div class="row"><div class="kw">SAE</div><div class="def"><code>SAE = sum |program(x_i) - y_i|</code>. Lower is better, and 0 means a perfect fit.</div></div>
+      <div class="row"><div class="kw">Fitness cases</div><div class="def">The training input/output pairs used to evaluate each phenotype.</div></div>
+      <div class="row"><div class="kw">Deterministic mapping</div><div class="def">With the same grammar and codon sequence, GE always produces the same phenotype.</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-grammar">
+    <div class="tbl">
+      <div class="row" style="background:var(--color-background-secondary);"><div class="kw" style="background:transparent;border-right-color:var(--color-border-secondary);">Term</div><div class="def" style="color:var(--color-text-primary);font-weight:500;">Definition</div></div>
+      <div class="row"><div class="kw">CFG</div><div class="def">Context-Free Grammar. GE uses a CFG written in BNF notation.</div></div>
+      <div class="row"><div class="kw">BNF</div><div class="def">Backus-Naur Form. It uses <code>::=</code> for "can be replaced by" and <code>|</code> for alternatives.</div></div>
+      <div class="row"><div class="kw">G = &lt;N, T, P, S&gt;</div><div class="def">Formal grammar definition: N = non-terminals, T = terminals, P = production rules, S = start symbol.</div></div>
+      <div class="row"><div class="kw">Non-terminals</div><div class="def">Symbols like <code>&lt;expr&gt;</code> and <code>&lt;op&gt;</code> that still need to be expanded.</div></div>
+      <div class="row"><div class="kw">Terminals</div><div class="def">Final output symbols like <code>+</code>, <code>x</code>, or <code>3</code>. They do not expand further.</div></div>
+      <div class="row"><div class="kw">Production rules</div><div class="def">The possible expansions for each non-terminal. Count the alternatives to know how many rules there are.</div></div>
+      <div class="row"><div class="kw">Start symbol</div><div class="def">The first non-terminal to be expanded in every derivation.</div></div>
+      <div class="row"><div class="kw"><code>::=</code></div><div class="def">Separates the non-terminal from its right-hand-side expansions.</div></div>
+      <div class="row"><div class="kw"><code>|</code></div><div class="def">Separates alternative rules. The number of alternatives is the number of rules for that non-terminal.</div></div>
+      <div class="row"><div class="kw">Arity</div><div class="def">The number of inputs an operator needs, for example binary operators like <code>+</code> or <code>*</code> take two.</div></div>
+      <div class="row"><div class="kw">Domain knowledge</div><div class="def">The grammar itself can encode what counts as a valid or useful program for the problem.</div></div>
+      <div class="row"><div class="kw">LHS / RHS</div><div class="def">Left-hand side is the non-terminal being defined. Right-hand side is the set of expansions it can become.</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-mapping">
+    <div class="tbl">
+      <div class="row" style="background:var(--color-background-secondary);"><div class="kw" style="background:transparent;border-right-color:var(--color-border-secondary);">Term / step</div><div class="def" style="color:var(--color-text-primary);font-weight:500;">Definition</div></div>
+      <div class="row"><div class="kw">Mapping equation</div><div class="def"><code>rule = codon_decimal % number_of_rules</code>. This gives the zero-based rule index to apply.</div></div>
+      <div class="row"><div class="kw">Modulo (%)</div><div class="def">Returns the remainder after division, guaranteeing a valid rule index.</div></div>
+      <div class="row"><div class="kw">Number of rules</div><div class="def">Count the alternatives for the current non-terminal.</div></div>
+      <div class="row"><div class="kw">Rule index</div><div class="def">Zero-based: rule 0 is the first option, rule 1 the second, and so on.</div></div>
+      <div class="row"><div class="kw">Leftmost derivation</div><div class="def">Always expand the leftmost non-terminal first. This is what makes the process deterministic.</div></div>
+      <div class="row"><div class="kw">Multi-symbol expansion</div><div class="def">A rule can expand into multiple symbols at once, for example <code>&lt;expr&gt; &lt;op&gt; &lt;expr&gt;</code>.</div></div>
+      <div class="row"><div class="kw">Derivation string</div><div class="def">The current partially expanded expression, containing both terminals and non-terminals.</div></div>
+      <div class="row"><div class="kw">Codon pointer</div><div class="def">Tracks which codon is used next. It advances after each expansion and wraps if needed.</div></div>
+      <div class="row"><div class="kw">Binary to decimal</div><div class="def">Convert each 8-bit codon to decimal before applying the mapping equation.</div></div>
+      <div class="row"><div class="kw">Derivation tree</div><div class="def">A tree showing how the start symbol expands into the final phenotype.</div></div>
+      <div class="row"><div class="kw">Three questions per step</div><div class="def">1. Which non-terminal am I expanding? 2. How many rules does it have? 3. What does <code>codon % rules</code> give me?</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-ops">
+    <div class="tbl">
+      <div class="row" style="background:var(--color-background-secondary);"><div class="kw" style="background:transparent;border-right-color:var(--color-border-secondary);">Component</div><div class="def" style="color:var(--color-text-primary);font-weight:500;">Definition</div></div>
+      <div class="row"><div class="kw">Initial population</div><div class="def">Randomly generated variable-length binary strings within user-defined bounds.</div></div>
+      <div class="row"><div class="kw">Selection</div><div class="def">Usually tournament or fitness-proportionate selection, just like in GA.</div></div>
+      <div class="row"><div class="kw">Crossover</div><div class="def">Single-point crossover on binary strings. Offspring lengths can differ from the parents.</div></div>
+      <div class="row"><div class="kw">Cut point rule</div><div class="def">Choose the cut point from <code>[1, shortest_parent_length - 1]</code>.</div></div>
+      <div class="row"><div class="kw">Variable-length offspring</div><div class="def">Parents can have different lengths, so offspring lengths can vary too.</div></div>
+      <div class="row"><div class="kw">Mutation</div><div class="def">Bit-flip mutation changes bits in the chromosome, which changes codon values and therefore grammar decisions.</div></div>
+      <div class="row"><div class="kw">Elitism</div><div class="def">Best individuals are copied unchanged into the next generation.</div></div>
+      <div class="row"><div class="kw">Population replacement</div><div class="def">Can be generational or steady-state, optionally with elitism.</div></div>
+      <div class="row"><div class="kw">Termination</div><div class="def">Stop when the target fitness is reached or the maximum generation count is hit.</div></div>
+      <div class="row"><div class="kw">GE algorithm order</div><div class="def">Generate population, decode, evaluate fitness, select parents, crossover, mutate, evaluate offspring, replace population, repeat.</div></div>
+      <div class="row"><div class="kw">What evolution changes</div><div class="def">Only the chromosome changes. The grammar and fitness function stay fixed.</div></div>
+      <div class="row"><div class="kw">What fitness evaluates</div><div class="def">Only the phenotype is scored. The chromosome is never evaluated directly.</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-vs">
+    <div class="tbl">
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;background:var(--color-background-secondary);">
+        <div class="kw" style="background:transparent;border-right-color:var(--color-border-secondary);">Feature</div>
+        <div class="def" style="color:#3C3489;font-weight:500;border-right:0.5px solid var(--color-border-tertiary);">GP</div>
+        <div class="def" style="color:#085041;font-weight:500;">GE</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Individual</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Syntax tree</div>
+        <div class="def" style="color:#085041;">Variable-length binary string</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Genotype</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">The tree itself</div>
+        <div class="def" style="color:#085041;">Binary string (codons)</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Phenotype</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">The tree is the program</div>
+        <div class="def" style="color:#085041;">Program produced by grammar decoding</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Genotype = Phenotype?</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Yes - same object</div>
+        <div class="def" style="color:#085041;">No - separate layers</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Structure enforced by</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Function and terminal sets</div>
+        <div class="def" style="color:#085041;">Explicit BNF grammar</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Closure required</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Yes - must satisfy closure property</div>
+        <div class="def" style="color:#085041;">No - grammar handles validity</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Crossover</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Subtree swap</div>
+        <div class="def" style="color:#085041;">Single-point on binary string</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Mutation</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Grow / shrink subtree</div>
+        <div class="def" style="color:#085041;">Bit-flip</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Operator complexity</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Tree-aware operators needed</div>
+        <div class="def" style="color:#085041;">Standard GA operators - simpler</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Domain knowledge</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">In function / terminal sets</div>
+        <div class="def" style="color:#085041;">In BNF grammar rules</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Wrapping</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Not applicable</div>
+        <div class="def" style="color:#085041;">Used when codons run out before derivation completes</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Bloat</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Trees grow without fitness gain - harder to control</div>
+        <div class="def" style="color:#085041;">Controlled more by grammar structure</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Variable length</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Yes - trees grow and shrink</div>
+        <div class="def" style="color:#085041;">Yes - binary strings vary in length</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Proposed by</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">John Koza</div>
+        <div class="def" style="color:#085041;">Ryan et al.</div>
+      </div>
+      <div class="row" style="grid-template-columns:160px 1fr 1fr;">
+        <div class="kw">Search space</div>
+        <div class="def" style="color:#3C3489;border-right:0.5px solid var(--color-border-tertiary);">Program space via tree structure</div>
+        <div class="def" style="color:#085041;">Program space via grammar plus binary string</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function sw(name){
+  ['core','grammar','mapping','ops','vs'].forEach(function(t){
+    document.getElementById('tab-'+t).className='gb'+(t===name?' pri':'');
+    document.getElementById('panel-'+t).className='panel'+(t===name?' active':'');
+  });
+}
+</script>

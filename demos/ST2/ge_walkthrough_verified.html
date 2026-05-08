@@ -1,0 +1,343 @@
+
+<style>
+  .gb{padding:8px 16px;border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);cursor:pointer;font-size:13px;font-weight:500;color:var(--color-text-primary);}
+  .gb:hover{background:var(--color-background-secondary);}
+  .gb:disabled{opacity:0.35;cursor:default;}
+  .gb.pri{background:#EEEDFE;border-color:#7F77DD;color:#26215C;}
+  .sc{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px;margin-bottom:8px;}
+  .lbl{font-size:12px;color:var(--color-text-secondary);}
+  .cap{border-left:3px solid #7F77DD;border-radius:0;padding:8px 12px;background:#EEEDFE;margin-bottom:12px;}
+  .cap p{font-size:13px;color:#534AB7;margin:0;line-height:1.5;}
+  .pill{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:#EEEDFE;color:#3C3489;margin-bottom:8px;}
+  .cr{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);margin-bottom:5px;background:var(--color-background-primary);}
+  .cr.best{border-color:#1D9E75;background:#E1F5EE;}
+  .cr.par{border-color:#7F77DD;background:#EEEDFE;}
+  .cr.off{border-color:#D85A30;background:#FAECE7;}
+  .cr.dim{opacity:0.3;}
+  .chip{padding:2px 6px;border-radius:4px;font-size:11px;font-family:var(--font-mono);font-weight:500;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);}
+  .prog{font-family:var(--font-mono);font-size:13px;font-weight:500;padding:3px 8px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);}
+  .der{font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);padding:2px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+  .der:last-child{border-bottom:none;}
+  .der span.nt{color:#3C3489;font-weight:500;}
+  .der span.cv{color:#D85A30;font-weight:500;}
+  .der span.res{color:#085041;font-weight:500;}
+</style>
+
+<h2 class="sr-only">Complete verified GE walkthrough from random chromosomes through decoding scoring selection crossover mutation and new generation</h2>
+
+<div style="padding:1rem 0;" id="root"></div>
+
+<script>
+const DATA=[[1,3],[2,8],[3,15],[4,24],[5,35]];
+
+const POP=[
+  {id:'C1',codons:[0,1,0,0,1,0],prog:'x + x',sae:55,
+   deriv:[
+    {nt:'expr',cv:0,nr:2,ri:0,out:'expr op expr'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+    {nt:'op',  cv:0,nr:3,ri:0,out:'+'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+   ]},
+  {id:'C2',codons:[0,1,0,2,1,0],prog:'x * x',sae:30,
+   deriv:[
+    {nt:'expr',cv:0,nr:2,ri:0,out:'expr op expr'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+    {nt:'op',  cv:2,nr:3,ri:2,out:'*'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+   ]},
+  {id:'C3',codons:[0,1,0,0,1,3],prog:'x + 3',sae:57,
+   deriv:[
+    {nt:'expr',cv:0,nr:2,ri:0,out:'expr op expr'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+    {nt:'op',  cv:0,nr:3,ri:0,out:'+'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:3,nr:4,ri:3,out:'3'},
+   ]},
+  {id:'C4',codons:[0,0,1,0,2,1,0,0,1,2],prog:'x * x + 2',sae:20,
+   deriv:[
+    {nt:'expr',cv:0,nr:2,ri:0,out:'expr op expr'},
+    {nt:'expr',cv:0,nr:2,ri:0,out:'expr op expr'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+    {nt:'op',  cv:2,nr:3,ri:2,out:'*'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+    {nt:'op',  cv:0,nr:3,ri:0,out:'+'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:2,nr:4,ri:2,out:'2'},
+   ]},
+  {id:'C5',codons:[0,1,0,1,1,1],prog:'x - 1',sae:75,
+   deriv:[
+    {nt:'expr',cv:0,nr:2,ri:0,out:'expr op expr'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:0,nr:4,ri:0,out:'x'},
+    {nt:'op',  cv:1,nr:3,ri:1,out:'-'},
+    {nt:'expr',cv:1,nr:2,ri:1,out:'var'},
+    {nt:'var', cv:1,nr:4,ri:1,out:'1'},
+   ]},
+];
+
+const O1={id:'O1',codons:[0,0,1,0,2,1],prog:'x * x + x',sae:15,from:'C4 head (6) + C2 tail (none)'};
+const O2={id:'O2',codons:[0,1,0,2,1,0,0,0,1,2],prog:'x * x',sae:30,from:'C2 head (6) + C4 tail (4 codons)'};
+const O1MUT={id:'O1 mutated',codons:[0,0,1,2,2,1],prog:'2 * x + 2',sae:47,note:'codon 4 flipped: 0→2'};
+
+function saeCol(s){return s===0?'#085041':s<25?'#3C3489':s<50?'#993C1D':'#D85A30';}
+function saeBg(s){return s===0?'#E1F5EE':s<25?'#EEEDFE':s<50?'#FAECE7':'#FAECE7';}
+
+function chromRow(c,cls='',extra=''){
+  const maxSAE=80;
+  const w=c.sae===0?4:Math.round(Math.min(c.sae,maxSAE)/maxSAE*90);
+  return `<div class="cr ${cls}">
+    <span class="lbl" style="min-width:28px;font-weight:500;">${c.id}</span>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;">${c.codons.map(n=>`<span class="chip">${n}</span>`).join('')}</div>
+    <span class="prog">${c.prog}</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+      <div style="width:90px;height:7px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden;">
+        <div style="width:${w}px;height:7px;background:${saeCol(c.sae)};border-radius:4px;"></div>
+      </div>
+      <span style="font-size:12px;font-weight:500;color:${saeCol(c.sae)};min-width:52px;">SAE ${c.sae}</span>
+    </div>
+    ${extra}
+  </div>`;
+}
+
+const STEPS=[
+{title:'Step 1 — generate random population',
+ cap:'Five chromosomes are randomly generated as sequences of small integers (our codons). Each chromosome has a different length. This is generation 1 — no evolution has happened yet.',
+ render(){
+   return `<div class="sc">
+     <p class="lbl" style="margin:0 0 10px;font-weight:500;">Population — 5 chromosomes, each a codon sequence</p>
+     ${POP.map(c=>`<div class="cr">
+       <span class="lbl" style="min-width:28px;font-weight:500;">${c.id}</span>
+       <div style="display:flex;gap:3px;flex-wrap:wrap;">${c.codons.map(n=>`<span class="chip">${n}</span>`).join('')}</div>
+       <span class="lbl" style="margin-left:auto;">${c.codons.length} codons</span>
+     </div>`).join('')}
+     <p class="lbl" style="margin:8px 0 0;">Codons are small integers — each one will answer one grammar decision.</p>
+   </div>`;
+ }},
+{title:'Step 2 — decode each chromosome via grammar',
+ cap:'Each codon sequence is fed into the grammar left-to-right. Rule = codon % number_of_rules. Each expansion consumes one codon. The result is an executable program — the phenotype.',
+ render(){
+   return `<div class="sc" style="margin-bottom:10px;">
+     <p class="lbl" style="margin:0 0 6px;font-weight:500;">Grammar</p>
+     <div style="font-family:var(--font-mono);font-size:12px;line-height:1.9;color:var(--color-text-secondary);">
+       <span style="color:#3C3489;">&lt;expr&gt;</span> ::= <span style="color:#3C3489;">&lt;expr&gt; &lt;op&gt; &lt;expr&gt;</span> (r0) | <span style="color:#085041;">var</span> (r1)<br>
+       <span style="color:#3C3489;">&lt;op&gt;</span> ::= <span style="color:#085041;">+</span>(r0) | <span style="color:#085041;">-</span>(r1) | <span style="color:#085041;">*</span>(r2)<br>
+       <span style="color:#3C3489;">&lt;var&gt;</span> ::= <span style="color:#085041;">x</span>(r0) | <span style="color:#085041;">1</span>(r1) | <span style="color:#085041;">2</span>(r2) | <span style="color:#085041;">3</span>(r3)
+     </div>
+   </div>
+   ${POP.map(c=>`<div class="sc" style="margin-bottom:6px;">
+     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+       <span class="lbl" style="font-weight:500;min-width:24px;">${c.id}</span>
+       <div style="display:flex;gap:3px;">${c.codons.map(n=>`<span class="chip">${n}</span>`).join('')}</div>
+       <span style="color:var(--color-text-secondary);">→</span>
+       <span class="prog" style="background:#EEEDFE;color:#26215C;">${c.prog}</span>
+     </div>
+     <div style="padding:4px 8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);">
+       ${c.deriv.map(d=>`<div class="der">
+         expand <span class="nt">&lt;${d.nt}&gt;</span> — codon <span class="cv">${d.cv}</span> % ${d.nr} rules = ${d.ri} → rule ${d.ri} → <span class="res">${d.out}</span>
+       </div>`).join('')}
+     </div>
+   </div>`).join('')}`;
+ }},
+{title:'Step 3 — evaluate fitness (SAE)',
+ cap:'Each phenotype is run against the 5 fitness cases. For every x value, we compute |program output − target y|. Sum all errors → SAE. Lower SAE = better chromosome. Target is y = x² + 2x.',
+ render(){
+   return `<div class="sc" style="margin-bottom:10px;">
+     <p class="lbl" style="margin:0 0 6px;font-weight:500;">Fitness cases (target: y = x² + 2x)</p>
+     <div style="display:flex;gap:6px;">${DATA.map(([x,y])=>`<div style="text-align:center;padding:5px 8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);"><div class="lbl">x=${x}</div><div style="font-size:13px;font-weight:500;">${y}</div></div>`).join('')}</div>
+   </div>
+   <div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">All chromosomes scored</p>
+     ${POP.map(c=>chromRow(c,c.sae===20?'best':'')).join('')}
+     <p class="lbl" style="margin:8px 0 0;">C4 has the lowest SAE (20) — it is the best chromosome this generation.</p>
+   </div>`;
+ }},
+{title:'Step 4 — tournament selection (size 3)',
+ cap:'Two tournaments pick two parents. Each tournament randomly draws 3 chromosomes — lowest SAE wins. C4 wins both tournaments here because it has the best fitness. It becomes both Parent 1 and Parent 2.',
+ render(){
+   const t1=[POP[0],POP[2],POP[3]], w1=POP[3];
+   const t2=[POP[1],POP[3],POP[4]], w2=POP[3];
+   function tBlock(label,contestants,winner){
+     return `<div class="sc"><p class="lbl" style="margin:0 0 8px;font-weight:500;">${label}</p>
+       ${contestants.map(c=>`<div class="cr ${c===winner?'best':''}">
+         <span class="lbl" style="min-width:24px;">${c.id}</span>
+         <span class="prog">${c.prog}</span>
+         <span class="lbl" style="margin-left:auto;">SAE ${c.sae}</span>
+         ${c===winner?`<span style="font-size:11px;padding:2px 6px;border-radius:99px;background:#E1F5EE;color:#085041;">winner</span>`:''}
+       </div>`).join('')}
+     </div>`;
+   }
+   return tBlock('Tournament 1 → Parent 1',t1,w1)+tBlock('Tournament 2 → Parent 2',t2,w2);
+ }},
+{title:'Step 5 — single-point crossover',
+ cap:'Cut point is chosen within the shorter parent (length 6). First 6 codons of C4 go to Offspring 1. C2\'s 6 codons become the head of Offspring 2, C4\'s remaining 4 codons become its tail. Two new chromosomes produced.',
+ render(){
+   const p1=POP[3],p2=POP[1];
+   const cut=6;
+   return `<div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">Parents</p>
+     <div class="cr par">
+       <span class="lbl" style="min-width:60px;font-weight:500;">Parent 1 (C4)</span>
+       <div style="display:flex;gap:3px;align-items:center;">
+         ${p1.codons.map((n,i)=>`<span class="chip" style="${i<cut?'background:#EEEDFE;color:#3C3489;border-color:#7F77DD;':''}">${n}</span>`).join('')}
+         <span class="lbl" style="margin-left:4px;">← cut after codon 6</span>
+       </div>
+     </div>
+     <div class="cr par">
+       <span class="lbl" style="min-width:60px;font-weight:500;">Parent 2 (C2)</span>
+       <div style="display:flex;gap:3px;">
+         ${p2.codons.map((n,i)=>`<span class="chip" style="background:#E1F5EE;color:#085041;border-color:#1D9E75;">${n}</span>`).join('')}
+       </div>
+     </div>
+   </div>
+   <div style="text-align:center;font-size:12px;color:var(--color-text-secondary);padding:4px 0;">
+     <span style="color:#3C3489;">purple</span> = from P1 &nbsp;|&nbsp; <span style="color:#085041;">teal</span> = from P2
+   </div>
+   <div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">Offspring</p>
+     <div class="cr off">
+       <span class="lbl" style="min-width:60px;font-weight:500;">Offspring 1</span>
+       <div style="display:flex;gap:3px;">
+         ${[0,0,1,0,2,1].map(n=>`<span class="chip" style="background:#EEEDFE;color:#3C3489;border-color:#7F77DD;">${n}</span>`).join('')}
+       </div>
+       <span class="prog" style="margin-left:8px;">x * x + x</span>
+       <span style="font-size:12px;font-weight:500;color:#3C3489;margin-left:auto;">SAE 15</span>
+     </div>
+     <div class="cr off">
+       <span class="lbl" style="min-width:60px;font-weight:500;">Offspring 2</span>
+       <div style="display:flex;gap:3px;">
+         ${[0,1,0,2,1,0].map(n=>`<span class="chip" style="background:#E1F5EE;color:#085041;border-color:#1D9E75;">${n}</span>`).join('')}
+         ${[0,0,1,2].map(n=>`<span class="chip" style="background:#EEEDFE;color:#3C3489;border-color:#7F77DD;">${n}</span>`).join('')}
+       </div>
+       <span class="prog" style="margin-left:8px;">x * x</span>
+       <span style="font-size:12px;font-weight:500;color:#3C3489;margin-left:auto;">SAE 30</span>
+     </div>
+     <p class="lbl" style="margin:8px 0 0;">Offspring 1 SAE improved from 20 → 15. Evolution is working.</p>
+   </div>`;
+ }},
+{title:'Step 6 — bit-flip mutation',
+ cap:'Codon 4 in Offspring 1 flips from 0 to 2. This changes which var rule gets selected at step 3 of the derivation — instead of producing x it now produces 2. The phenotype changes from x*x+x to 2*x+2.',
+ render(){
+   const before=[0,0,1,0,2,1];
+   const after=[0,0,1,2,2,1];
+   const flipIdx=3;
+   return `<div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">Offspring 1 — before mutation</p>
+     <div class="cr">
+       <div style="display:flex;gap:3px;">${before.map((n,i)=>`<span class="chip">${n}</span>`).join('')}</div>
+       <span class="prog">x * x + x</span>
+       <span style="font-size:12px;font-weight:500;color:#3C3489;margin-left:auto;">SAE 15</span>
+     </div>
+   </div>
+   <div style="text-align:center;font-size:12px;color:var(--color-text-secondary);padding:3px 0;">codon 4 flips: 0 → 2 &nbsp; (changes var rule: 0%4=0→x becomes 2%4=2→2)</div>
+   <div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">Offspring 1 — after mutation</p>
+     <div class="cr off">
+       <div style="display:flex;gap:3px;">${after.map((n,i)=>`<span class="chip" style="${i===flipIdx?'background:#FAECE7;color:#4A1B0C;border-color:#D85A30;':''}">${n}</span>`).join('')}</div>
+       <span class="prog">2 * x + 2</span>
+       <span style="font-size:12px;font-weight:500;color:#993C1D;margin-left:auto;">SAE 47</span>
+     </div>
+     <p class="lbl" style="margin:8px 0 0;">This mutation hurt fitness (SAE went up). That is normal — most mutations are neutral or harmful. Selection in the next generation will filter it out.</p>
+   </div>`;
+ }},
+{title:'Step 7 — new generation',
+ cap:'The new population replaces the old. C4 is kept unchanged via elitism (it was the best). The offspring fill the remaining slots. Best SAE this generation is 15 — better than generation 1\'s best of 20.',
+ render(){
+   const newpop=[
+     {id:'C4 (elite)',codons:[0,0,1,0,2,1,0,0,1,2],prog:'x * x + 2',sae:20},
+     {id:'O1',codons:[0,0,1,0,2,1],prog:'x * x + x',sae:15},
+     {id:'O2',codons:[0,1,0,2,1,0,0,0,1,2],prog:'x * x',sae:30},
+     {id:'O1 mut',codons:[0,0,1,2,2,1],prog:'2 * x + 2',sae:47},
+     {id:'other',codons:[0,0,1,0,2,1,0,0,1,2],prog:'x * x + 2',sae:20},
+   ];
+   const g1best=20, g2best=15;
+   return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+     <div style="padding:10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);">
+       <p class="lbl" style="margin:0 0 3px;">Generation 1 best SAE</p>
+       <p style="font-size:20px;font-weight:500;color:#D85A30;margin:0;">${g1best}</p>
+     </div>
+     <div style="padding:10px;background:#E1F5EE;border-radius:var(--border-radius-md);">
+       <p class="lbl" style="margin:0 0 3px;">Generation 2 best SAE</p>
+       <p style="font-size:20px;font-weight:500;color:#085041;margin:0;">${g2best} — improved</p>
+     </div>
+   </div>
+   <div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">New population — generation 2</p>
+     ${newpop.map((c,i)=>`<div class="cr ${c.sae===15?'best':i===0?'par':''}">
+       <span class="lbl" style="font-size:11px;min-width:70px;">${c.id}</span>
+       <span class="prog">${c.prog}</span>
+       <span style="font-size:12px;font-weight:500;margin-left:auto;color:${saeCol(c.sae)};">SAE ${c.sae}</span>
+       ${c.sae===15?`<span style="font-size:11px;padding:2px 6px;border-radius:99px;background:#E1F5EE;color:#085041;">best</span>`:''}
+       ${i===0?`<span style="font-size:11px;padding:2px 6px;border-radius:99px;background:#EEEDFE;color:#3C3489;">elite</span>`:''}
+     </div>`).join('')}
+   </div>
+   <div class="sc" style="border-left:3px solid #7F77DD;border-radius:0;background:#EEEDFE;">
+     <p style="font-size:13px;color:#3C3489;margin:0;">Loop repeats. Select → crossover → mutate → decode → score. Each generation the population drifts toward lower SAE. The algorithm stops when SAE = 0 or max generations hit.</p>
+   </div>`;
+ }},
+{title:'Step 8 — what the optimal chromosome looks like',
+ cap:'After enough generations, a chromosome evolves whose codon sequence decodes to x * x + 2 with SAE = 0. Every fitness case is matched exactly. The algorithm terminates and returns this chromosome as the solution.',
+ render(){
+   const opt={id:'optimal',codons:[0,0,1,0,2,1,0,0,1,2],prog:'x * x + 2',sae:0};
+   const rows=DATA.map(([x,y])=>{const o=x*x+2;return{x,y,o,err:Math.abs(o-y)};});
+   return `<div class="sc best">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">Optimal chromosome</p>
+     <div class="cr best">
+       <div style="display:flex;gap:3px;">${opt.codons.map(n=>`<span class="chip">${n}</span>`).join('')}</div>
+       <span class="prog" style="background:#E1F5EE;color:#085041;">x * x + 2</span>
+       <span style="font-size:13px;font-weight:500;color:#085041;margin-left:auto;">SAE 0</span>
+     </div>
+   </div>
+   <div class="sc">
+     <p class="lbl" style="margin:0 0 8px;font-weight:500;">Verification against all fitness cases</p>
+     <table style="width:100%;font-size:13px;border-collapse:collapse;">
+       <tr style="border-bottom:0.5px solid var(--color-border-tertiary);">
+         <td class="lbl" style="padding:4px 6px;">x</td>
+         <td class="lbl" style="padding:4px 6px;">target y</td>
+         <td class="lbl" style="padding:4px 6px;">x*x+2 output</td>
+         <td class="lbl" style="padding:4px 6px;">error</td>
+       </tr>
+       ${rows.map(r=>`<tr style="border-bottom:0.5px solid var(--color-border-tertiary);">
+         <td style="padding:4px 6px;font-weight:500;">${r.x}</td>
+         <td style="padding:4px 6px;">${r.y}</td>
+         <td style="padding:4px 6px;font-family:var(--font-mono);">${r.o}</td>
+         <td style="padding:4px 6px;font-weight:500;color:#085041;">${r.err}</td>
+       </tr>`).join('')}
+     </table>
+     <div style="margin-top:10px;padding:8px 12px;background:#E1F5EE;border-radius:var(--border-radius-md);">
+       <span style="font-size:14px;font-weight:500;color:#085041;">SAE = 0 — perfect fit. Algorithm terminates. Best chromosome returned.</span>
+     </div>
+   </div>`;
+ }},
+];
+
+let s=0;
+function render(){
+  const step=STEPS[s],total=STEPS.length,pct=Math.round(s/(total-1)*100);
+  document.getElementById('root').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;height:4px;background:var(--color-background-secondary);border-radius:2px;">
+        <div style="width:${pct}%;height:4px;background:#7F77DD;border-radius:2px;transition:width 0.3s;"></div>
+      </div>
+      <span class="lbl">${s+1}/${total}</span>
+    </div>
+    <span class="pill">Step ${s+1} of ${total}</span>
+    <h3 style="margin:0 0 10px;font-size:15px;font-weight:500;">${step.title}</h3>
+    <div class="cap"><p>${step.cap}</p></div>
+    <div>${step.render()}</div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="gb" onclick="prev()" ${s===0?'disabled':''}><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      <button class="gb pri" onclick="next()" ${s===total-1?'disabled':''}>${s===total-1?'Complete':'Next step'} <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+      <button class="gb" onclick="s=0;render()" style="margin-left:auto;"><i class="ti ti-refresh" aria-hidden="true"></i> Restart</button>
+    </div>`;
+}
+function next(){if(s<STEPS.length-1){s++;render();}}
+function prev(){if(s>0){s--;render();}}
+render();
+</script>

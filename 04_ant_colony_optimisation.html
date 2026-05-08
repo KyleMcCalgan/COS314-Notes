@@ -47,15 +47,21 @@
   <div class="section">
     <h2>Probability Rule</h2>
     <div class="formula">p(i,j) = (tau_ij^alpha * eta_ij^beta) / sum(tau_il^alpha * eta_il^beta)</div>
+    <div class="card">
+      <strong>When You Use It</strong>
+      Sub-topic 3. Use this every time an ant must choose its next city or next feasible component during solution construction.
+    </div>
+    <div class="formula">P(edge i -> j) = (pheromone^pheromone_weight * desirability^heuristic_weight) / sum over all valid edges(same)</div>
+    <p>The denominator just normalises the values so that all valid next-edge probabilities add up to 1.</p>
     <table>
       <thead>
         <tr><th>Symbol</th><th>Meaning</th></tr>
       </thead>
       <tbody>
         <tr><td><code>tau_ij</code></td><td>Pheromone on edge or component <code>(i,j)</code></td></tr>
-        <tr><td><code>eta_ij</code></td><td>Heuristic value, often <code>1 / distance</code></td></tr>
-        <tr><td><code>alpha</code></td><td>Weight of pheromone information</td></tr>
-        <tr><td><code>beta</code></td><td>Weight of heuristic information</td></tr>
+        <tr><td><code>eta_ij</code></td><td>Heuristic desirability, usually <code>1 / distance</code></td></tr>
+        <tr><td><code>alpha</code></td><td>Pheromone weight</td></tr>
+        <tr><td><code>beta</code></td><td>Heuristic weight</td></tr>
         <tr><td><code>N(s)</code></td><td>Feasible neighbourhood from the current partial solution</td></tr>
       </tbody>
     </table>
@@ -72,19 +78,46 @@
   <div class="section">
     <h2>Pheromone Update</h2>
     <div class="formula">tau_ij(t + 1) = (1 - rho) * tau_ij(t) + Delta tau_ij</div>
+    <div class="card">
+      <strong>When You Use It</strong>
+      Sub-topic 4. Apply the pheromone update once per iteration, after all ants have completed their tours for that iteration.
+    </div>
+    <div class="formula">new_pheromone(i,j) = (1 - evap_rate) * old_pheromone(i,j) + total_deposited(i,j)</div>
     <div class="formula">Delta tau_ij = sum(Delta tau_ij^k)</div>
+    <p>The first term keeps some memory of the old trail, while the second term adds all pheromone deposits made by ants that used that edge.</p>
+  </div>
+
+  <div class="section">
+    <h2>Deposit Rule</h2>
     <div class="formula">Delta tau_ij^k = Q / L_k if ant k used edge (i,j), otherwise 0</div>
+    <div class="card blue">
+      <strong>When You Use It</strong>
+      Also in Sub-topic 4. Compute this per ant first, then sum all ants' deposits into the main pheromone update formula.
+    </div>
+    <div class="formula">deposit(i,j) = pheromone_constant / tour_length if ant used this edge, else 0</div>
+    <p>Shorter tours get a larger <code>Q / L_k</code> value, so better ants reinforce their edges more strongly. If an ant did not walk on the edge, it deposits nothing there.</p>
     <table>
       <thead>
         <tr><th>Parameter</th><th>Meaning</th></tr>
       </thead>
       <tbody>
         <tr><td><code>rho</code></td><td>Evaporation rate, with <code>0 &lt; rho &lt; 1</code></td></tr>
-        <tr><td><code>Q</code></td><td>Deposit scaling constant</td></tr>
+        <tr><td><code>Q</code></td><td>Pheromone scaling constant</td></tr>
         <tr><td><code>L_k</code></td><td>Length or cost of ant k's full solution</td></tr>
       </tbody>
     </table>
     <div class="callout">Shorter tours receive larger pheromone deposits because <code>Q / L_k</code> is bigger when <code>L_k</code> is smaller.</div>
+  </div>
+
+  <div class="section">
+    <h2>Heuristic Value</h2>
+    <div class="formula">eta_ij = 1 / d_ij</div>
+    <div class="card blue">
+      <strong>When You Use It</strong>
+      Sub-topic 3. This is pre-computed before the algorithm starts, then fed into the probability rule as the desirability of each edge.
+    </div>
+    <div class="formula">desirability(i,j) = 1 / distance(i,j)</div>
+    <p>Short edges get high desirability, long edges get low desirability, and this heuristic value does not change during the run.</p>
   </div>
 
   <div class="section">
@@ -111,12 +144,13 @@
         <tr><th>Parameter</th><th>Role</th></tr>
       </thead>
       <tbody>
-        <tr><td>Number of ants</td><td>Colony size and search breadth</td></tr>
-        <tr><td><code>alpha</code></td><td>Influence of pheromone</td></tr>
-        <tr><td><code>beta</code></td><td>Influence of heuristic information</td></tr>
-        <tr><td><code>rho</code></td><td>Pheromone evaporation speed</td></tr>
-        <tr><td>Pheromone intensity</td><td>How strongly deposited pheromone affects later moves</td></tr>
-        <tr><td>Heuristic definition</td><td>Usually based on inverse distance or a similar desirability measure</td></tr>
+        <tr><td><code>alpha</code></td><td>Pheromone weight. High <code>alpha</code> means ants follow existing trails more strongly, so exploitation increases.</td></tr>
+        <tr><td><code>beta</code></td><td>Heuristic weight. High <code>beta</code> makes ants behave more greedily by preferring shorter edges more strongly.</td></tr>
+        <tr><td><code>rho</code></td><td>Evaporation rate, between 0 and 1. High <code>rho</code> means pheromone fades faster, so the colony has less memory and explores more.</td></tr>
+        <tr><td><code>Q</code></td><td>Pheromone constant. Larger <code>Q</code> means more pheromone is deposited per tour.</td></tr>
+        <tr><td><code>tau</code></td><td>Pheromone level on an edge. It is updated every iteration and usually starts equal on all edges at some initial <code>tau_0</code>.</td></tr>
+        <tr><td><code>eta</code></td><td>Heuristic desirability, usually <code>1 / distance</code>. It is fixed and never updated.</td></tr>
+        <tr><td><code>m</code></td><td>Number of ants. Often chosen equal to the number of cities.</td></tr>
         <tr><td>Local search strategy</td><td>Optional post-processing step for complete solutions</td></tr>
         <tr><td>Termination criterion</td><td>Maximum iterations, time, or convergence threshold</td></tr>
       </tbody>
