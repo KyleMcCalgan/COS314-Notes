@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 860" role="img" aria-labelledby="title desc">
+  <title id="title">ACO probability and pheromone update formula guide</title>
+  <desc id="desc">A structured visual showing the ACO probability formula, pheromone update formula, deposit rule, symbol meanings, and the recommended calculation order.</desc>
+  <style>
+    .bg { fill: #0f1117; }
+    .panel { fill: #1c1f2b; stroke: #252830; stroke-width: 1; rx: 8; }
+    .panel-strong { fill: #1c1f2b; stroke: #4d5570; stroke-width: 1.2; rx: 8; }
+    .box-green { fill: none; stroke: #1d9e75; stroke-width: 2; rx: 7; }
+    .box-orange { fill: none; stroke: #d85a30; stroke-width: 2; rx: 7; }
+    .box-violet { fill: none; stroke: #7f77dd; stroke-width: 2; rx: 7; }
+    .box-faint { fill: none; stroke: #252830; stroke-width: 1; rx: 7; }
+    .section-title { fill: #e0d8c8; font: 600 14px 'Segoe UI', Arial, sans-serif; }
+    .panel-title { fill: #1d9e75; font: 600 12px 'Segoe UI', Arial, sans-serif; }
+    .panel-title-orange { fill: #d85a30; font: 600 12px 'Segoe UI', Arial, sans-serif; }
+    .panel-title-violet { fill: #7f77dd; font: 600 12px 'Segoe UI', Arial, sans-serif; }
+    .label { fill: #a0988a; font: 400 12px 'Segoe UI', Arial, sans-serif; }
+    .body { fill: #e0d8c8; font: 500 13px 'Segoe UI', Arial, sans-serif; }
+    .small { fill: #a0988a; font: 400 11px 'Segoe UI', Arial, sans-serif; }
+    .formula { fill: #e0d8c8; font: 600 20px Consolas, 'Courier New', monospace; }
+    .formula-small { fill: #e0d8c8; font: 600 16px Consolas, 'Courier New', monospace; }
+    .formula-green { fill: #1d9e75; font: 600 18px Consolas, 'Courier New', monospace; }
+    .formula-orange { fill: #d85a30; font: 600 18px Consolas, 'Courier New', monospace; }
+    .formula-violet { fill: #7f77dd; font: 600 15px Consolas, 'Courier New', monospace; }
+    .line { stroke: #252830; stroke-width: 1; }
+    .line-strong { stroke: #4d5570; stroke-width: 1; }
+    .arrow { stroke: #a0988a; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1 L8 5 L2 9" fill="none" stroke="#a0988a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="680" height="860"/>
+
+  <text class="section-title" x="40" y="30">Probability formula: used every time an ant chooses the next feasible edge</text>
+  <line class="line-strong" x1="40" y1="42" x2="640" y2="42"/>
+
+  <rect class="box-faint" x="40" y="60" width="120" height="82"/>
+  <text class="label" x="100" y="82" text-anchor="middle">pre-compute first</text>
+  <text class="formula-green" x="100" y="106" text-anchor="middle">&#951; = 1 / d</text>
+  <text class="small" x="100" y="124" text-anchor="middle">shorter edges</text>
+  <text class="small" x="100" y="138" text-anchor="middle">have higher desirability</text>
+
+  <line class="arrow" x1="160" y1="101" x2="178" y2="101"/>
+
+  <rect class="box-green" x="180" y="60" width="130" height="82"/>
+  <text class="panel-title" x="245" y="82" text-anchor="middle">block 1</text>
+  <text class="label" x="245" y="98" text-anchor="middle">desirability term</text>
+  <text class="formula-green" x="245" y="122" text-anchor="middle">&#951;<tspan dy="-8" font-size="12">&#946;</tspan></text>
+  <text class="small" x="245" y="138" text-anchor="middle">&#951; raised to &#946;</text>
+
+  <text class="formula-small" x="325" y="110" text-anchor="middle">&#215;</text>
+
+  <rect class="box-green" x="340" y="60" width="130" height="82"/>
+  <text class="panel-title" x="405" y="82" text-anchor="middle">block 2</text>
+  <text class="label" x="405" y="98" text-anchor="middle">pheromone term</text>
+  <text class="formula-green" x="405" y="122" text-anchor="middle">&#964;<tspan dy="-8" font-size="12">&#945;</tspan></text>
+  <text class="small" x="405" y="138" text-anchor="middle">&#964; raised to &#945;</text>
+
+  <text class="formula-small" x="485" y="110" text-anchor="middle">=</text>
+
+  <rect class="box-green" x="500" y="60" width="140" height="82"/>
+  <text class="panel-title" x="570" y="82" text-anchor="middle">block 3: numerator</text>
+  <text class="label" x="570" y="98" text-anchor="middle">score for one edge</text>
+  <text class="formula-green" x="570" y="122" text-anchor="middle">&#951;<tspan dy="-8" font-size="12">&#946;</tspan><tspan dy="8"></tspan> &#215; &#964;<tspan dy="-8" font-size="12">&#945;</tspan></text>
+  <text class="small" x="570" y="138" text-anchor="middle">current candidate only</text>
+
+  <line class="line-strong" x1="180" y1="166" x2="640" y2="166"/>
+  <text class="label" x="54" y="162">divide by</text>
+
+  <rect class="box-orange" x="180" y="178" width="460" height="76"/>
+  <text class="panel-title-orange" x="410" y="200" text-anchor="middle">block 4: denominator</text>
+  <text class="formula-orange" x="410" y="224" text-anchor="middle">&#931; ( &#951;<tspan dy="-8" font-size="12">&#946;</tspan><tspan dy="8"></tspan> &#215; &#964;<tspan dy="-8" font-size="12">&#945;</tspan><tspan dy="8"></tspan> )</text>
+  <text class="small" x="410" y="242" text-anchor="middle">repeat the numerator calculation for every feasible next edge, then add them all</text>
+
+  <rect class="box-violet" x="180" y="268" width="460" height="34"/>
+  <text class="formula-violet" x="410" y="290" text-anchor="middle">P(edge i &#8594; j) = block 3 / block 4 = one edge score / sum of all scores</text>
+
+  <line class="line" x1="40" y1="324" x2="640" y2="324"/>
+
+  <text class="section-title" x="40" y="350">Pheromone update: used once per iteration after all ants finish their tours</text>
+  <line class="line-strong" x1="40" y1="362" x2="640" y2="362"/>
+
+  <rect class="box-violet" x="40" y="382" width="170" height="104"/>
+  <text class="panel-title-violet" x="125" y="404" text-anchor="middle">block A</text>
+  <text class="label" x="125" y="420" text-anchor="middle">evaporation term</text>
+  <text class="formula-violet" x="125" y="448" text-anchor="middle">(1 - &#961;) &#215; &#964;<tspan dy="-7" font-size="11">old</tspan></text>
+  <text class="small" x="125" y="468" text-anchor="middle">keep part of the old trail</text>
+
+  <text class="formula-small" x="230" y="438" text-anchor="middle">+</text>
+
+  <rect class="box-orange" x="250" y="382" width="170" height="104"/>
+  <text class="panel-title-orange" x="335" y="404" text-anchor="middle">block B</text>
+  <text class="label" x="335" y="420" text-anchor="middle">total deposited pheromone</text>
+  <text class="formula-orange" x="335" y="448" text-anchor="middle">&#916;&#964; = &#931; &#916;&#964;<tspan dy="-7" font-size="11">k</tspan></text>
+  <text class="small" x="335" y="468" text-anchor="middle">sum deposits from all ants</text>
+
+  <text class="formula-small" x="440" y="438" text-anchor="middle">=</text>
+
+  <rect class="box-green" x="460" y="382" width="180" height="104"/>
+  <text class="panel-title" x="550" y="404" text-anchor="middle">final update</text>
+  <text class="label" x="550" y="420" text-anchor="middle">new pheromone value</text>
+  <text class="formula-green" x="550" y="448" text-anchor="middle">&#964;<tspan dy="-7" font-size="11">new</tspan><tspan dy="7"></tspan> = A + B</text>
+  <text class="small" x="550" y="468" text-anchor="middle">value used next iteration</text>
+
+  <rect class="panel-strong" x="40" y="514" width="185" height="306"/>
+  <text class="section-title" x="132.5" y="540" text-anchor="middle">symbol key</text>
+  <line class="line" x1="40" y1="552" x2="225" y2="552"/>
+  <text class="body" x="56" y="580">&#964;</text>
+  <text class="small" x="56" y="596">pheromone on an edge</text>
+  <line class="line" x1="40" y1="606" x2="225" y2="606"/>
+  <text class="body" x="56" y="632">&#951;</text>
+  <text class="small" x="56" y="648">heuristic desirability</text>
+  <line class="line" x1="40" y1="658" x2="225" y2="658"/>
+  <text class="body" x="56" y="684">&#945;, &#946;</text>
+  <text class="small" x="56" y="700">weights for pheromone and heuristic</text>
+  <line class="line" x1="40" y1="710" x2="225" y2="710"/>
+  <text class="body" x="56" y="736">&#961;</text>
+  <text class="small" x="56" y="752">evaporation rate</text>
+  <line class="line" x1="40" y1="762" x2="225" y2="762"/>
+  <text class="body" x="56" y="788">N(s)</text>
+  <text class="small" x="56" y="804">feasible next choices</text>
+
+  <rect class="panel-strong" x="245" y="514" width="180" height="306"/>
+  <text class="section-title" x="335" y="540" text-anchor="middle">deposit terms</text>
+  <line class="line" x1="245" y1="552" x2="425" y2="552"/>
+  <text class="body" x="261" y="580">Q</text>
+  <text class="small" x="261" y="596">deposit constant</text>
+  <line class="line" x1="245" y1="606" x2="425" y2="606"/>
+  <text class="body" x="261" y="632">L<tspan dy="-6" font-size="10">k</tspan></text>
+  <text class="small" x="261" y="648">tour length of ant k</text>
+  <line class="line" x1="245" y1="658" x2="425" y2="658"/>
+  <text class="body" x="261" y="684">&#916;&#964;<tspan dy="-6" font-size="10">k</tspan></text>
+  <text class="small" x="261" y="700">deposit from one ant</text>
+  <text class="small" x="261" y="714">= Q / L<tspan dy="-4" font-size="9">k</tspan> if that ant used the edge</text>
+  <line class="line" x1="245" y1="726" x2="425" y2="726"/>
+  <text class="body" x="261" y="752">&#931;</text>
+  <text class="small" x="261" y="768">add all relevant values together</text>
+  <line class="line" x1="245" y1="778" x2="425" y2="778"/>
+  <text class="body" x="261" y="804">&#964;<tspan dy="-6" font-size="10">old</tspan>, &#964;<tspan dy="-6" font-size="10">new</tspan></text>
+  <text class="small" x="261" y="820">before and after the update</text>
+
+  <rect class="panel-strong" x="445" y="514" width="195" height="306"/>
+  <text class="section-title" x="542.5" y="540" text-anchor="middle">calculation order</text>
+  <line class="line" x1="445" y1="552" x2="640" y2="552"/>
+  <text class="panel-title" x="461" y="578">step 1</text>
+  <text class="small" x="461" y="594">&#951; = 1 / d</text>
+  <text class="small" x="461" y="608">compute desirability first</text>
+  <line class="line" x1="445" y1="618" x2="640" y2="618"/>
+  <text class="panel-title" x="461" y="644">step 2</text>
+  <text class="small" x="461" y="660">raise &#951; and &#964; to &#946; and &#945;</text>
+  <line class="line" x1="445" y1="670" x2="640" y2="670"/>
+  <text class="panel-title" x="461" y="696">step 3</text>
+  <text class="small" x="461" y="712">multiply to get one edge score</text>
+  <line class="line" x1="445" y1="722" x2="640" y2="722"/>
+  <text class="panel-title-orange" x="461" y="748">step 4</text>
+  <text class="small" x="461" y="764">sum all candidate scores</text>
+  <line class="line" x1="445" y1="774" x2="640" y2="774"/>
+  <text class="panel-title-violet" x="461" y="800">step 5</text>
+  <text class="small" x="461" y="816">P = one score / total score</text>
+  <line class="line" x1="445" y1="826" x2="640" y2="826"/>
+  <text class="panel-title-orange" x="461" y="848">then update trails</text>
+  <text class="small" x="461" y="864">(1 - &#961;)&#215;&#964;<tspan dy="-4" font-size="9">old</tspan> + &#931; &#916;&#964;<tspan dy="-4" font-size="9">k</tspan></text>
+</svg>

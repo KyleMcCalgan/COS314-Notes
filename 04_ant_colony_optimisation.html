@@ -8,6 +8,22 @@
 <style>
   :root { --accent: #c2842f; --accent2: #3f8ab0; --accent3: #8b5a43; }
   .hero::before { content: '04'; }
+  .demo-frame {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
+  .formula-visual {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -121,6 +137,12 @@
   </div>
 
   <div class="section">
+    <h2>Formula Map</h2>
+    <p>This visual ties the probability rule, deposit rule, and pheromone update together in the same order you would usually work them out by hand in a test or tutorial question.</p>
+    <img class="formula-visual" src="demos/ST2/aco_formula_fixed.svg" alt="ACO formula map showing the probability formula, denominator expansion, pheromone update, deposit rule, and symbol meanings.">
+  </div>
+
+  <div class="section">
     <h2>Worked Selection Example</h2>
     <p>Suppose an ant at node A can choose AB or AC, with <code>alpha = 1</code> and <code>beta = 2</code>.</p>
     <table class="tight-table">
@@ -190,6 +212,93 @@
   </div>
 
   <div class="section">
+    <h2>Important ACO Variants</h2>
+    <p>In exams, basic ACO is often treated as <strong>Ant System (AS)</strong>. Later variants mainly change how pheromone is updated so that convergence is faster and stagnation is reduced.</p>
+    <table>
+      <thead>
+        <tr><th>Variant</th><th>Main Idea</th><th>What Changes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>AS</code></td><td>The original ant system</td><td>All ants construct solutions and all ants contribute to the global pheromone update.</td></tr>
+        <tr><td><code>MMAS</code></td><td>Stronger control of pheromone values</td><td>Usually only the best ant deposits pheromone, and every trail is clipped to a minimum and maximum bound.</td></tr>
+        <tr><td><code>ACS</code></td><td>More aggressive exploitation with extra diversification</td><td>Uses a stronger decision rule, a local pheromone update during construction, and a global update usually based on the best solution.</td></tr>
+      </tbody>
+    </table>
+    <div class="card blue">
+      <strong>High-Level Memory Trick</strong>
+      <ul>
+        <li><code>AS</code>: everyone deposits.</li>
+        <li><code>MMAS</code>: best deposits, bounded trails.</li>
+        <li><code>ACS</code>: smarter choice rule plus local updates.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>AS: Ant System</h2>
+    <p><strong>Ant System</strong> is the classical form of ACO. Each ant builds a full solution using the standard probability rule, and after the iteration all ants may deposit pheromone on the components they used.</p>
+    <div class="formula">tau_ij(t + 1) = (1 - rho) * tau_ij(t) + sum(Delta tau_ij^k)</div>
+    <p>This is the most direct version to write if a question simply asks for the basic ACO pheromone model.</p>
+    <div class="callout">Exam cue: if the notes ask for the standard probability rule and standard global update, that is usually AS.</div>
+  </div>
+
+  <div class="section">
+    <h2>MMAS: MAX-MIN Ant System</h2>
+    <p><strong>MAX-MIN Ant System</strong> was designed to reduce premature stagnation. Instead of letting pheromone values grow without much control, each trail is kept inside fixed bounds.</p>
+    <div class="formula">tau_min &lt;= tau_ij &lt;= tau_max</div>
+    <p>MMAS commonly allows only the <strong>best ant</strong> to reinforce the trails, often the best-so-far ant or the best ant in the current iteration.</p>
+    <div class="grid2">
+      <div class="card">
+        <strong>Main benefit</strong>
+        Bounding pheromone prevents one path from becoming overwhelmingly dominant too early.
+      </div>
+      <div class="card blue">
+        <strong>Main trade-off</strong>
+        It exploits strong solutions hard, so the bounds are important for preserving some exploration.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>ACS: Ant Colony System</h2>
+    <p><strong>Ant Colony System</strong> adds two important ideas: a more exploitative state transition rule, and a <strong>local pheromone update</strong> that happens immediately when an ant traverses an edge.</p>
+    <div class="formula">tau_ij = (1 - xi) * tau_ij + xi * tau_0</div>
+    <p>The local update makes recently used edges slightly less attractive to following ants in the same iteration, which encourages them to spread out more.</p>
+    <div class="card">
+      <strong>Typical ACS pattern</strong>
+      The ant often chooses the best-looking next edge directly with probability <code>q_0</code>, otherwise it uses the normal probabilistic rule.
+    </div>
+    <p>After all ants finish, ACS still performs a global update, usually reinforcing only the best tour.</p>
+  </div>
+
+  <div class="section">
+    <h2>How To Compare Them In An Answer</h2>
+    <table class="tight-table">
+      <thead>
+        <tr><th>If asked...</th><th>What to say</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Which one is the basic form?</td><td><code>AS</code> is the original baseline ACO variant.</td></tr>
+        <tr><td>Which one controls stagnation with explicit pheromone bounds?</td><td><code>MMAS</code>, because it enforces <code>tau_min</code> and <code>tau_max</code>.</td></tr>
+        <tr><td>Which one uses local pheromone updates during construction?</td><td><code>ACS</code>.</td></tr>
+        <tr><td>Which variants usually let only the best ant reinforce strongly?</td><td><code>MMAS</code> and commonly <code>ACS</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Interactive Demo: ACO Probability Calculation</h2>
+    <p>Use this visual when you want to see the probability rule expanded step by step from distances and equal starting pheromone values to the final normalised next-city probabilities.</p>
+    <iframe class="demo-frame" src="demos/ST2/aco_probability_static_v3.html" title="ACO Probability Calculation Visual" style="height: 760px"></iframe>
+  </div>
+
+  <div class="section">
+    <h2>Interactive Demo: Full ACO Worked Example</h2>
+    <p>This walkthrough ties the whole process together: fixed parameters, heuristic values, edge-selection probabilities, complete ant tours, pheromone deposits, evaporation, and the final updated trails.</p>
+    <iframe class="demo-frame" src="demos/ST2/aco_full_worked_example.html" title="Full ACO Worked Example" style="height: 1500px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Exam Checklist</h2>
     <ul class="checklist">
       <li class="done">Write the probability rule and explain every symbol.</li>
@@ -197,6 +306,7 @@
       <li class="done">Explain how <code>alpha</code> and <code>beta</code> affect exploration and exploitation.</li>
       <li class="done">Carry out one probability calculation by hand.</li>
       <li class="done">State the full outer loop of ACO in the correct order.</li>
+      <li class="done">Differentiate <code>AS</code>, <code>MMAS</code>, and <code>ACS</code> at a high level.</li>
     </ul>
   </div>
 
@@ -213,6 +323,23 @@
     bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
   }, { passive: true });
 })();
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      if (!doc) return;
+      const resize = function () {
+        const height = Math.max(
+          doc.body ? doc.body.scrollHeight : 0,
+          doc.documentElement ? doc.documentElement.scrollHeight : 0
+        );
+        if (height) frame.style.height = height + 'px';
+      };
+      resize();
+      new ResizeObserver(resize).observe(doc.body);
+    } catch (e) {}
+  });
+});
 </script>
 </body>
 </html>

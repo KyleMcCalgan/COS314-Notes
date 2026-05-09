@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full ACO Worked Example</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --color-border-primary: #4d5570;
+    --color-border-secondary: #252830;
+    --color-border-tertiary: #1e2028;
+    --color-background-primary: #0f1117;
+    --color-background-secondary: #1c1f2b;
+    --color-background-info: #1f2637;
+    --color-text-primary: #e0d8c8;
+    --color-text-secondary: #a0988a;
+    --border-radius-md: 6px;
+    --border-radius-lg: 10px;
+    --font-mono: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+  }
+  body {
+    margin: 0;
+    padding: 18px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0f1117;
+    color: #e0d8c8;
+  }
+  .gb{padding:8px 18px;border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);cursor:pointer;font-size:13px;font-weight:500;color:var(--color-text-primary);}
+  .gb:hover{background:var(--color-background-secondary);}
+  .gb:disabled{opacity:0.35;cursor:default;}
+  .gb.pri{background:#E1F5EE;border-color:#1D9E75;color:#085041;}
+  .gb.pri:hover{background:#C8EFE3;}
+  .lbl{font-size:12px;color:var(--color-text-secondary);}
+  .pill{display:inline-block;font-size:11px;font-weight:500;padding:2px 9px;border-radius:99px;background:#E1F5EE;color:#085041;margin-bottom:8px;}
+  .cap{border-left:3px solid #1D9E75;padding:10px 14px;background:#E1F5EE;margin-bottom:16px;}
+  .cap p{font-size:13px;color:#085041;margin:0;line-height:1.6;}
+  .card{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 14px;margin-bottom:10px;}
+  .tbl{width:100%;border-collapse:collapse;font-size:12px;}
+  .tbl th{padding:7px 10px;text-align:left;font-weight:500;color:var(--color-text-primary);border-bottom:1.5px solid var(--color-border-secondary);background:var(--color-background-secondary);}
+  .tbl td{padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);vertical-align:top;}
+  .tbl tr:last-child td{border-bottom:none;}
+  .tbl td.val{font-family:var(--font-mono);font-weight:500;color:var(--color-text-primary);}
+  .tbl td.hi{font-family:var(--font-mono);font-weight:500;color:#085041;background:#E1F5EE;}
+  .tbl td.src{font-size:11px;color:var(--color-text-secondary);font-style:italic;}
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1D9E75;color:#fff;font-size:11px;font-weight:500;flex-shrink:0;margin-right:8px;}
+  .step-h{display:flex;align-items:center;margin-bottom:10px;}
+  .tag{display:inline-block;font-size:10px;font-weight:500;padding:1px 6px;border-radius:99px;margin-left:6px;}
+  .tag-pher{background:#FAECE7;color:#4A1B0C;}
+  .tag-prob{background:#E1F5EE;color:#085041;}
+  .tag-dist{background:#EEEDFE;color:#26215C;}
+</style>
+</head>
+<body>
+
+<div style="padding:1rem 0;" id="root"></div>
+
+<script>
+const STEPS=[
+{pill:'parameter bank',title:'All values before we start',
+cap:'Every value used throughout this example is defined here. Each has a key letter, official symbol, value, and where it comes from. Refer back to this table at every calculation step.',
+render(){return`
+<div class="step-h"><div class="snum">1</div><span style="font-size:13px;font-weight:500;">Fixed parameters — set by the user before the algorithm runs</span></div>
+<div class="card">
+<table class="tbl">
+<tr><th>Key</th><th>Symbol</th><th>Name</th><th>Value</th><th>Where it comes from</th></tr>
+<tr><td>a</td><td>α</td><td>Pheromone weight</td><td class="val">1</td><td class="src">User chosen. Controls trail following strength.</td></tr>
+<tr><td>b</td><td>β</td><td>Heuristic weight</td><td class="val">2</td><td class="src">User chosen. Controls distance preference strength.</td></tr>
+<tr><td>r</td><td>ρ</td><td>Evaporation rate</td><td class="val">0.5</td><td class="src">User chosen. 50% of pheromone lost per iteration.</td></tr>
+<tr><td>q</td><td>Q</td><td>Deposit constant</td><td class="val">10</td><td class="src">User chosen. Scales how much pheromone is deposited.</td></tr>
+<tr><td>t0</td><td>τ₀</td><td>Initial pheromone</td><td class="val">1.0</td><td class="src">User chosen. Starting pheromone on all edges equally.</td></tr>
+<tr><td>m</td><td>m</td><td>Number of ants</td><td class="val">2</td><td class="src">User chosen. Two ants per iteration.</td></tr>
+</table>
+</div>
+<div class="step-h" style="margin-top:16px;"><div class="snum">2</div><span style="font-size:13px;font-weight:500;">Distance matrix — fixed, comes from the problem</span></div>
+<div class="card">
+<table class="tbl">
+<tr><th>Edge</th><th>Key</th><th>Distance value</th><th>Where it comes from</th></tr>
+<tr><td>A→B</td><td>d(A,B)</td><td class="val">2</td><td class="src">Given in problem — physical distance between city A and B</td></tr>
+<tr><td>A→C</td><td>d(A,C)</td><td class="val">5</td><td class="src">Given in problem</td></tr>
+<tr><td>A→D</td><td>d(A,D)</td><td class="val">7</td><td class="src">Given in problem</td></tr>
+<tr><td>B→C</td><td>d(B,C)</td><td class="val">4</td><td class="src">Given in problem</td></tr>
+<tr><td>B→D</td><td>d(B,D)</td><td class="val">6</td><td class="src">Given in problem</td></tr>
+<tr><td>C→D</td><td>d(C,D)</td><td class="val">3</td><td class="src">Given in problem</td></tr>
+</table>
+</div>
+<div class="step-h" style="margin-top:16px;"><div class="snum">3</div><span style="font-size:13px;font-weight:500;">Desirability n = 1/d — pre-computed once, never changes</span></div>
+<div class="card">
+<table class="tbl">
+<tr><th>Edge</th><th>Key</th><th>Calculation</th><th>Value</th><th>Where it comes from</th></tr>
+<tr><td>A→B</td><td>n(A,B)</td><td>1 / d(A,B) = 1 / 2</td><td class="val">0.500</td><td class="src">Derived from d(A,B). Short edge = high desirability.</td></tr>
+<tr><td>A→C</td><td>n(A,C)</td><td>1 / d(A,C) = 1 / 5</td><td class="val">0.200</td><td class="src">Derived from d(A,C)</td></tr>
+<tr><td>A→D</td><td>n(A,D)</td><td>1 / d(A,D) = 1 / 7</td><td class="val">0.143</td><td class="src">Derived from d(A,D)</td></tr>
+<tr><td>B→C</td><td>n(B,C)</td><td>1 / d(B,C) = 1 / 4</td><td class="val">0.250</td><td class="src">Derived from d(B,C)</td></tr>
+<tr><td>B→D</td><td>n(B,D)</td><td>1 / d(B,D) = 1 / 6</td><td class="val">0.167</td><td class="src">Derived from d(B,D)</td></tr>
+<tr><td>C→D</td><td>n(C,D)</td><td>1 / d(C,D) = 1 / 3</td><td class="val">0.333</td><td class="src">Derived from d(C,D)</td></tr>
+</table>
+</div>
+<div class="step-h" style="margin-top:16px;"><div class="snum">4</div><span style="font-size:13px;font-weight:500;">Initial pheromone t — set equal on all edges at start</span></div>
+<div class="card">
+<table class="tbl">
+<tr><th>Edge</th><th>Key</th><th>Value</th><th>Where it comes from</th></tr>
+<tr><td>All edges</td><td>t(all)</td><td class="val">1.0</td><td class="src">= t0. Every edge starts equal — no bias toward any path.</td></tr>
+</table>
+</div>`;}},
+
+{pill:'construction — ant 1 at A',title:'Ant 1 step 1 — choosing from A',
+cap:'Ant 1 starts at city A. Unvisited cities are B, C, D. Apply the probability formula to each one. Formula keys: P = (t^a × n^b) / sum_all(t^a × n^b). With a=1, b=2 this becomes P = (t × n²) / sum.',
+render(){return`
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Inputs pulled from parameter bank <span class="tag tag-pher">pheromone</span><span class="tag tag-prob">desirability</span></p>
+<table class="tbl">
+<tr><th>Input</th><th>Key</th><th>Value</th><th>Source</th></tr>
+<tr><td>Pheromone A→B</td><td>t(A,B)</td><td class="val">1.0</td><td class="src">From initial pheromone bank — t0 = 1.0</td></tr>
+<tr><td>Pheromone A→C</td><td>t(A,C)</td><td class="val">1.0</td><td class="src">From initial pheromone bank — t0 = 1.0</td></tr>
+<tr><td>Pheromone A→D</td><td>t(A,D)</td><td class="val">1.0</td><td class="src">From initial pheromone bank — t0 = 1.0</td></tr>
+<tr><td>Desirability A→B</td><td>n(A,B)</td><td class="val">0.500</td><td class="src">From desirability table — 1/d(A,B) = 1/2</td></tr>
+<tr><td>Desirability A→C</td><td>n(A,C)</td><td class="val">0.200</td><td class="src">From desirability table — 1/d(A,C) = 1/5</td></tr>
+<tr><td>Desirability A→D</td><td>n(A,D)</td><td class="val">0.143</td><td class="src">From desirability table — 1/d(A,D) = 1/7</td></tr>
+<tr><td>Alpha (a)</td><td>a</td><td class="val">1</td><td class="src">From parameter bank</td></tr>
+<tr><td>Beta (b)</td><td>b</td><td class="val">2</td><td class="src">From parameter bank</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Step 1 — calculate score = t^a × n^b for each candidate city</p>
+<table class="tbl">
+<tr><th>To city</th><th>t value</th><th>n value</th><th>n² (n^b)</th><th>score = t × n²</th></tr>
+<tr><td>B</td><td class="val">1.0</td><td class="val">0.500</td><td class="val">0.500² = 0.250</td><td class="val">1.0 × 0.250 = 0.250</td></tr>
+<tr><td>C</td><td class="val">1.0</td><td class="val">0.200</td><td class="val">0.200² = 0.040</td><td class="val">1.0 × 0.040 = 0.040</td></tr>
+<tr><td>D</td><td class="val">1.0</td><td class="val">0.143</td><td class="val">0.143² = 0.020</td><td class="val">1.0 × 0.020 = 0.020</td></tr>
+<tr style="background:var(--color-background-secondary);"><td colspan="4" style="font-weight:500;padding:7px 10px;">Sum of all scores (denominator)</td><td class="val" style="font-weight:500;">0.310</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Step 2 — calculate P = score / sum for each candidate</p>
+<table class="tbl">
+<tr><th>To city</th><th>score</th><th>sum</th><th>P = score/sum</th><th>Probability</th></tr>
+<tr><td>B</td><td class="val">0.250</td><td class="val">0.310</td><td class="val">0.250 / 0.310</td><td class="hi">80.6%</td></tr>
+<tr><td>C</td><td class="val">0.040</td><td class="val">0.310</td><td class="val">0.040 / 0.310</td><td class="val">12.9%</td></tr>
+<tr><td>D</td><td class="val">0.020</td><td class="val">0.310</td><td class="val">0.020 / 0.310</td><td class="val">6.5%</td></tr>
+</table>
+<div style="margin-top:10px;padding:8px 10px;background:#E1F5EE;border-radius:var(--border-radius-md);">
+<span style="font-size:13px;color:#085041;font-weight:500;">Ant 1 picks city B (80.6% probability) — shortest edge from A. Tabu list: {A, B}</span>
+</div>
+</div>`;}},
+
+{pill:'construction — ant 1 at B',title:'Ant 1 step 2 — choosing from B',
+cap:'Ant 1 is now at city B. Already visited: A. Remaining unvisited: C, D. Same formula applied — pheromone still 1.0 everywhere (no update has happened yet). Only the desirability values change because we are at a different city.',
+render(){return`
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Inputs pulled from parameter bank</p>
+<table class="tbl">
+<tr><th>Input</th><th>Key</th><th>Value</th><th>Source</th></tr>
+<tr><td>Pheromone B→C</td><td>t(B,C)</td><td class="val">1.0</td><td class="src">From initial pheromone bank — t0 = 1.0 (no update yet)</td></tr>
+<tr><td>Pheromone B→D</td><td>t(B,D)</td><td class="val">1.0</td><td class="src">From initial pheromone bank — t0 = 1.0</td></tr>
+<tr><td>Desirability B→C</td><td>n(B,C)</td><td class="val">0.250</td><td class="src">From desirability table — 1/d(B,C) = 1/4</td></tr>
+<tr><td>Desirability B→D</td><td>n(B,D)</td><td class="val">0.167</td><td class="src">From desirability table — 1/d(B,D) = 1/6</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Score and probability calculation</p>
+<table class="tbl">
+<tr><th>To city</th><th>t value</th><th>n value</th><th>n²</th><th>score = t × n²</th><th>P = score/sum</th></tr>
+<tr><td>C</td><td class="val">1.0</td><td class="val">0.250</td><td class="val">0.063</td><td class="val">1.0 × 0.063 = 0.063</td><td class="hi">69.2%</td></tr>
+<tr><td>D</td><td class="val">1.0</td><td class="val">0.167</td><td class="val">0.028</td><td class="val">1.0 × 0.028 = 0.028</td><td class="val">30.8%</td></tr>
+<tr style="background:var(--color-background-secondary);"><td colspan="4" style="font-weight:500;padding:7px 10px;">Sum</td><td class="val">0.091</td><td></td></tr>
+</table>
+<div style="margin-top:10px;padding:8px 10px;background:#E1F5EE;border-radius:var(--border-radius-md);">
+<span style="font-size:13px;color:#085041;font-weight:500;">Ant 1 picks city C (69.2%). Only D remains — ant must go D then return to A. Tabu list: {A,B,C,D}</span>
+</div>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 8px;font-weight:500;">Ant 1 complete tour</p>
+<table class="tbl">
+<tr><th>Step</th><th>Edge</th><th>Key d</th><th>Distance</th></tr>
+<tr><td>1</td><td>A → B</td><td>d(A,B)</td><td class="val">2</td></tr>
+<tr><td>2</td><td>B → C</td><td>d(B,C)</td><td class="val">4</td></tr>
+<tr><td>3</td><td>C → D</td><td>d(C,D)</td><td class="val">3</td></tr>
+<tr><td>4</td><td>D → A</td><td>d(D,A)</td><td class="val">7</td></tr>
+<tr style="background:var(--color-background-secondary);"><td colspan="3" style="font-weight:500;padding:7px 10px;">Total — key L1</td><td class="hi">L1 = 16</td></tr>
+</table>
+</div>`;}},
+
+{pill:'construction — ant 2',title:'Ant 2 — full tour',
+cap:'Ant 2 starts at A and takes a different probabilistic path. It picks C first (a less likely but possible choice), then D, then B, then returns to A. Same formula, same pheromone values — different random outcome.',
+render(){return`
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Ant 2 at city A — same inputs as ant 1 step 1, different random pick</p>
+<table class="tbl">
+<tr><th>To city</th><th>t value</th><th>n value</th><th>n²</th><th>score</th><th>P</th></tr>
+<tr><td>B</td><td class="val">1.0</td><td class="val">0.500</td><td class="val">0.250</td><td class="val">0.250</td><td class="val">80.6%</td></tr>
+<tr><td>C</td><td class="val">1.0</td><td class="val">0.200</td><td class="val">0.040</td><td class="val">0.040</td><td class="hi">12.9% — ant 2 picks this</td></tr>
+<tr><td>D</td><td class="val">1.0</td><td class="val">0.143</td><td class="val">0.020</td><td class="val">0.020</td><td class="val">6.5%</td></tr>
+</table>
+<p class="lbl" style="margin:8px 0 0;">Same probabilities as ant 1 — but ant 2 happens to pick C (12.9% chance). This is the randomness that keeps ants exploring different routes.</p>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Ant 2 at city C — unvisited: B, D</p>
+<table class="tbl">
+<tr><th>To city</th><th>t value</th><th>n value</th><th>n²</th><th>score</th><th>P</th></tr>
+<tr><td>B</td><td class="val">1.0</td><td class="val">0.250</td><td class="val">0.063</td><td class="val">0.063</td><td class="val">30.8%</td></tr>
+<tr><td>D</td><td class="val">1.0</td><td class="val">0.333</td><td class="val">0.111</td><td class="val">0.111</td><td class="hi">69.2% — ant 2 picks D</td></tr>
+<tr style="background:var(--color-background-secondary);"><td colspan="4" style="font-weight:500;padding:7px 10px;">Sum</td><td class="val">0.174</td><td></td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 8px;font-weight:500;">Ant 2 complete tour</p>
+<table class="tbl">
+<tr><th>Step</th><th>Edge</th><th>Key d</th><th>Distance</th></tr>
+<tr><td>1</td><td>A → C</td><td>d(A,C)</td><td class="val">5</td></tr>
+<tr><td>2</td><td>C → D</td><td>d(C,D)</td><td class="val">3</td></tr>
+<tr><td>3</td><td>D → B</td><td>d(D,B)</td><td class="val">6</td></tr>
+<tr><td>4</td><td>B → A</td><td>d(B,A)</td><td class="val">2</td></tr>
+<tr style="background:var(--color-background-secondary);"><td colspan="3" style="font-weight:500;padding:7px 10px;">Total — key L2</td><td class="hi">L2 = 16</td></tr>
+</table>
+</div>`;}},
+
+{pill:'evaluation',title:'Evaluate both tours',
+cap:'Both tours are scored. Each ant calculates its deposit D = q / L. This is the pheromone it will add to every edge it used. Shorter tour = bigger deposit = stronger reinforcement.',
+render(){return`
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Inputs from parameter bank and construction phase</p>
+<table class="tbl">
+<tr><th>Input</th><th>Key</th><th>Value</th><th>Source</th></tr>
+<tr><td>Ant 1 tour length</td><td>L1</td><td class="val">16</td><td class="src">Summed from ant 1 tour: 2+4+3+7 = 16</td></tr>
+<tr><td>Ant 2 tour length</td><td>L2</td><td class="val">16</td><td class="src">Summed from ant 2 tour: 5+3+6+2 = 16</td></tr>
+<tr><td>Deposit constant</td><td>q</td><td class="val">10</td><td class="src">From parameter bank</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Calculate deposit D = q / L for each ant</p>
+<table class="tbl">
+<tr><th>Ant</th><th>Formula</th><th>Calculation</th><th>Key D</th><th>Deposit per edge used</th></tr>
+<tr><td>Ant 1</td><td>q / L1</td><td>10 / 16</td><td>D1</td><td class="hi">0.625</td></tr>
+<tr><td>Ant 2</td><td>q / L2</td><td>10 / 16</td><td>D2</td><td class="hi">0.625</td></tr>
+</table>
+<p class="lbl" style="margin:8px 0 0;">Both ants deposit 0.625 on every edge they used. If one had a shorter tour it would deposit more. This value feeds directly into the pheromone update formula next.</p>
+</div>`;}},
+
+{pill:'pheromone update',title:'Update pheromone on every edge',
+cap:'Formula keys: t_new = (1 − r) × t_old + sum_of_D. With r=0.5: t_new = 0.5 × t_old + deposits. First identify which ants used which edges, then apply the formula to every edge in the graph.',
+render(){return`
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Inputs from parameter bank and evaluation phase</p>
+<table class="tbl">
+<tr><th>Input</th><th>Key</th><th>Value</th><th>Source</th></tr>
+<tr><td>Evaporation rate</td><td>r</td><td class="val">0.5</td><td class="src">From parameter bank</td></tr>
+<tr><td>Old pheromone all edges</td><td>t_old</td><td class="val">1.0</td><td class="src">Initial value t0 — no previous update</td></tr>
+<tr><td>Ant 1 deposit per edge</td><td>D1</td><td class="val">0.625</td><td class="src">From evaluation step: q/L1 = 10/16</td></tr>
+<tr><td>Ant 2 deposit per edge</td><td>D2</td><td class="val">0.625</td><td class="src">From evaluation step: q/L2 = 10/16</td></tr>
+<tr><td>Survival factor</td><td>1−r</td><td class="val">0.5</td><td class="src">1 − r = 1 − 0.5 = 0.5</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Which ant used which edge</p>
+<table class="tbl">
+<tr><th>Edge</th><th>Ant 1 used?</th><th>Ant 2 used?</th><th>D from ant 1</th><th>D from ant 2</th><th>Total deposit</th></tr>
+<tr><td>A→B</td><td>Yes</td><td>No</td><td class="val">0.625</td><td class="val">0</td><td class="val">0.625</td></tr>
+<tr><td>B→C</td><td>Yes</td><td>No</td><td class="val">0.625</td><td class="val">0</td><td class="val">0.625</td></tr>
+<tr><td>C→D</td><td>Yes</td><td>Yes</td><td class="val">0.625</td><td class="val">0.625</td><td class="hi">1.250</td></tr>
+<tr><td>D→A</td><td>Yes</td><td>No</td><td class="val">0.625</td><td class="val">0</td><td class="val">0.625</td></tr>
+<tr><td>A→C</td><td>No</td><td>Yes</td><td class="val">0</td><td class="val">0.625</td><td class="val">0.625</td></tr>
+<tr><td>D→B</td><td>No</td><td>Yes</td><td class="val">0</td><td class="val">0.625</td><td class="val">0.625</td></tr>
+<tr><td>A→D</td><td>No</td><td>No</td><td class="val">0</td><td class="val">0</td><td class="val">0</td></tr>
+<tr><td>B→D</td><td>No</td><td>No</td><td class="val">0</td><td class="val">0</td><td class="val">0</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Apply t_new = (1 − r) × t_old + total_deposit to every edge</p>
+<table class="tbl">
+<tr><th>Edge</th><th>t_old</th><th>(1−r) × t_old</th><th>total deposit</th><th>t_new</th></tr>
+<tr><td>A→B</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0.625</td><td class="val">0.500 + 0.625 = <b>1.125</b></td></tr>
+<tr><td>B→C</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0.625</td><td class="val">0.500 + 0.625 = <b>1.125</b></td></tr>
+<tr><td>C→D</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">1.250</td><td class="hi">0.500 + 1.250 = <b>1.750</b></td></tr>
+<tr><td>D→A</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0.625</td><td class="val">0.500 + 0.625 = <b>1.125</b></td></tr>
+<tr><td>A→C</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0.625</td><td class="val">0.500 + 0.625 = <b>1.125</b></td></tr>
+<tr><td>D→B</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0.625</td><td class="val">0.500 + 0.625 = <b>1.125</b></td></tr>
+<tr><td>A→D</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0</td><td class="val">0.500 + 0 = <b>0.500</b></td></tr>
+<tr><td>B→D</td><td class="val">1.0</td><td class="val">0.5 × 1.0 = 0.500</td><td class="val">0</td><td class="val">0.500 + 0 = <b>0.500</b></td></tr>
+</table>
+</div>`;}},
+
+{pill:'result',title:'What iteration 1 produced',
+cap:'Iteration 1 is complete. The pheromone map has changed — C→D is the strongest edge because both ants used it. A→D and B→D are the weakest because nobody used them. These values are now the starting point for iteration 2.',
+render(){return`
+<div class="card">
+<p class="lbl" style="margin:0 0 10px;font-weight:500;">Final pheromone levels after iteration 1</p>
+<table class="tbl">
+<tr><th>Edge</th><th>Old t</th><th>New t</th><th>Change</th><th>Reason</th></tr>
+<tr><td>C→D</td><td class="val">1.0</td><td class="hi">1.750</td><td style="color:#085041;font-weight:500;">+0.750</td><td class="src">Used by both ants — double deposit</td></tr>
+<tr><td>A→B</td><td class="val">1.0</td><td class="val">1.125</td><td style="color:#085041;">+0.125</td><td class="src">Used by ant 1 only</td></tr>
+<tr><td>B→C</td><td class="val">1.0</td><td class="val">1.125</td><td style="color:#085041;">+0.125</td><td class="src">Used by ant 1 only</td></tr>
+<tr><td>D→A</td><td class="val">1.0</td><td class="val">1.125</td><td style="color:#085041;">+0.125</td><td class="src">Used by ant 1 only</td></tr>
+<tr><td>A→C</td><td class="val">1.0</td><td class="val">1.125</td><td style="color:#085041;">+0.125</td><td class="src">Used by ant 2 only</td></tr>
+<tr><td>D→B</td><td class="val">1.0</td><td class="val">1.125</td><td style="color:#085041;">+0.125</td><td class="src">Used by ant 2 only</td></tr>
+<tr><td>A→D</td><td class="val">1.0</td><td class="val" style="color:#993C1D;">0.500</td><td style="color:#993C1D;">−0.500</td><td class="src">No ant used it — evaporation only</td></tr>
+<tr><td>B→D</td><td class="val">1.0</td><td class="val" style="color:#993C1D;">0.500</td><td style="color:#993C1D;">−0.500</td><td class="src">No ant used it — evaporation only</td></tr>
+</table>
+</div>
+<div class="card">
+<p class="lbl" style="margin:0 0 8px;font-weight:500;">What happens in iteration 2</p>
+<table class="tbl">
+<tr><th>What</th><th>Detail</th></tr>
+<tr><td style="font-weight:500;">C→D is now most attractive</td><td class="src">t = 1.750. Any ant passing through C or D will strongly favour this edge.</td></tr>
+<tr><td style="font-weight:500;">A→D and B→D fade</td><td class="src">t = 0.500. Ants will rarely choose these — they were never on a good tour.</td></tr>
+<tr><td style="font-weight:500;">Best tour this iteration</td><td class="src">Both ants: length 16. A→B→C→D→A or A→C→D→B→A. Colony will try to beat this.</td></tr>
+<tr><td style="font-weight:500;">Loop repeats</td><td class="src">Construction → evaluation → pheromone update. Same process, new pheromone values.</td></tr>
+</table>
+</div>`;}},
+];
+
+let s=0;
+function render(){
+  const step=STEPS[s],total=STEPS.length,pct=Math.round(s/(total-1)*100);
+  document.getElementById('root').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="flex:1;height:4px;background:var(--color-background-secondary);border-radius:2px;">
+        <div style="width:${pct}%;height:4px;background:#1D9E75;border-radius:2px;transition:width 0.3s;"></div>
+      </div>
+      <span class="lbl">${s+1} / ${total}</span>
+    </div>
+    <span class="pill">${step.pill}</span>
+    <h3 style="margin:0 0 10px;font-size:15px;font-weight:500;">${step.title}</h3>
+    <div class="cap"><p>${step.cap}</p></div>
+    <div>${step.render()}</div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button class="gb" onclick="prev()" ${s===0?'disabled':''}>Back</button>
+      <button class="gb pri" onclick="next()" ${s===total-1?'disabled':''}>${s===total-1?'Complete':'Next step'}</button>
+      <button class="gb" onclick="s=0;render()" style="margin-left:auto;">Restart</button>
+    </div>`;
+}
+function next(){if(s<STEPS.length-1){s++;render();}}
+function prev(){if(s>0){s--;render();}}
+render();
+</script>
+</body>
+</html>

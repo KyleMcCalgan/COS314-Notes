@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACO Probability Calculation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --color-border-primary: #4d5570;
+    --color-border-secondary: #252830;
+    --color-border-tertiary: #1e2028;
+    --color-background-primary: #0f1117;
+    --color-background-secondary: #1c1f2b;
+    --color-background-info: #1f2637;
+    --color-text-primary: #e0d8c8;
+    --color-text-secondary: #a0988a;
+    --border-radius-md: 6px;
+    --border-radius-lg: 10px;
+    --font-mono: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+  }
+  body {
+    margin: 0;
+    padding: 18px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0f1117;
+    color: #e0d8c8;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .lbl{font-size:12px;color:var(--color-text-secondary);}
+  .snum{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1D9E75;color:#ffffff;font-size:11px;font-weight:500;flex-shrink:0;}
+  .card{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px;}
+  .row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+  .row:last-child{border-bottom:none;}
+  .mono{font-family:var(--font-mono);font-size:12px;}
+  .val{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--color-text-primary);}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">Ant probability calculation showing exact steps from distance to final probability for each city</h2>
+
+<div style="padding:1rem 0;">
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    <div>
+      <p class="lbl" style="margin:0 0 8px;font-weight:500;">Ant 1 is at city A — unvisited cities: B, C, D, E</p>
+      <div class="card">
+        <svg width="100%" viewBox="0 0 280 230" style="display:block;">
+          <line x1="140" y1="36" x2="245" y2="95" stroke="#1D9E75" stroke-width="2.5"/>
+          <line x1="140" y1="36" x2="205" y2="190" stroke="#1D9E75" stroke-width="2.5"/>
+          <line x1="140" y1="36" x2="75" y2="190" stroke="#1D9E75" stroke-width="2.5"/>
+          <line x1="140" y1="36" x2="35" y2="95" stroke="#1D9E75" stroke-width="2.5"/>
+          <line x1="245" y1="95" x2="205" y2="190" stroke="#888780" stroke-width="1.5" opacity="0.35"/>
+          <line x1="245" y1="95" x2="75" y2="190" stroke="#888780" stroke-width="1.5" opacity="0.35"/>
+          <line x1="245" y1="95" x2="35" y2="95" stroke="#888780" stroke-width="1.5" opacity="0.35"/>
+          <line x1="205" y1="190" x2="75" y2="190" stroke="#888780" stroke-width="1.5" opacity="0.35"/>
+          <line x1="205" y1="190" x2="35" y2="95" stroke="#888780" stroke-width="1.5" opacity="0.35"/>
+          <line x1="75" y1="190" x2="35" y2="95" stroke="#888780" stroke-width="1.5" opacity="0.35"/>
+          <text x="200" y="58" font-size="11" fill="#085041" font-family="sans-serif" font-weight="500">d=3</text>
+          <text x="182" y="130" font-size="11" fill="#085041" font-family="sans-serif" font-weight="500">d=6</text>
+          <text x="86" y="130" font-size="11" fill="#085041" font-family="sans-serif" font-weight="500">d=4</text>
+          <text x="58" y="58" font-size="11" fill="#085041" font-family="sans-serif" font-weight="500">d=2</text>
+          <circle cx="140" cy="36" r="20" fill="#D85A30"/>
+          <text x="140" y="42" text-anchor="middle" font-size="14" font-weight="500" fill="#ffffff" font-family="sans-serif">A</text>
+          <circle cx="245" cy="95" r="18" fill="#1D9E75"/>
+          <text x="245" y="101" text-anchor="middle" font-size="14" font-weight="500" fill="#ffffff" font-family="sans-serif">B</text>
+          <circle cx="205" cy="190" r="18" fill="#1D9E75"/>
+          <text x="205" y="196" text-anchor="middle" font-size="14" font-weight="500" fill="#ffffff" font-family="sans-serif">C</text>
+          <circle cx="75" cy="190" r="18" fill="#1D9E75"/>
+          <text x="75" y="196" text-anchor="middle" font-size="14" font-weight="500" fill="#ffffff" font-family="sans-serif">D</text>
+          <circle cx="35" cy="95" r="18" fill="#1D9E75"/>
+          <text x="35" y="101" text-anchor="middle" font-size="14" font-weight="500" fill="#ffffff" font-family="sans-serif">E</text>
+        </svg>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:14px;">
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;border-radius:50%;background:#D85A30;"></div><span class="lbl">ant is here</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;border-radius:50%;background:#1D9E75;"></div><span class="lbl">candidate cities</span></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="lbl" style="margin:0 0 8px;font-weight:500;">Parameters</p>
+      <div class="card">
+        <div class="row"><span class="lbl" style="min-width:130px;">alpha (pheromone weight)</span><span class="val">1</span></div>
+        <div class="row"><span class="lbl" style="min-width:130px;">beta (heuristic weight)</span><span class="val">2</span></div>
+        <div class="row"><span class="lbl" style="min-width:130px;">pheromone on each edge</span><span class="val">0.1 (all equal, iteration 1)</span></div>
+        <div class="row"><span class="lbl" style="min-width:130px;">formula</span><span class="mono" style="color:var(--color-text-secondary);font-size:11px;">P = (tau^a x eta^b) / sum_all</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div class="snum">1</div>
+        <span style="font-size:13px;font-weight:500;">eta = 1 / distance</span>
+      </div>
+      <div class="card">
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">A to B</span>
+          <span class="lbl">dist = 3</span>
+          <span class="mono" style="color:var(--color-text-secondary);">1 / 3</span>
+          <span class="val" style="margin-left:auto;">0.333</span>
+        </div>
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">A to C</span>
+          <span class="lbl">dist = 6</span>
+          <span class="mono" style="color:var(--color-text-secondary);">1 / 6</span>
+          <span class="val" style="margin-left:auto;">0.167</span>
+        </div>
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">A to D</span>
+          <span class="lbl">dist = 4</span>
+          <span class="mono" style="color:var(--color-text-secondary);">1 / 4</span>
+          <span class="val" style="margin-left:auto;">0.250</span>
+        </div>
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">A to E</span>
+          <span class="lbl">dist = 2</span>
+          <span class="mono" style="color:var(--color-text-secondary);">1 / 2</span>
+          <span class="val" style="margin-left:auto;">0.500</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div class="snum">2</div>
+        <span style="font-size:13px;font-weight:500;">score = tau^1 x eta^2</span>
+      </div>
+      <div class="card">
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">to B</span>
+          <span class="mono" style="font-size:11px;color:var(--color-text-secondary);">0.1 x 0.333^2 = 0.1 x 0.111</span>
+          <span class="val" style="margin-left:auto;">0.0111</span>
+        </div>
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">to C</span>
+          <span class="mono" style="font-size:11px;color:var(--color-text-secondary);">0.1 x 0.167^2 = 0.1 x 0.028</span>
+          <span class="val" style="margin-left:auto;">0.0028</span>
+        </div>
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">to D</span>
+          <span class="mono" style="font-size:11px;color:var(--color-text-secondary);">0.1 x 0.250^2 = 0.1 x 0.063</span>
+          <span class="val" style="margin-left:auto;">0.0063</span>
+        </div>
+        <div class="row">
+          <span style="font-size:12px;font-weight:500;min-width:36px;color:var(--color-text-primary);">to E</span>
+          <span class="mono" style="font-size:11px;color:var(--color-text-secondary);">0.1 x 0.500^2 = 0.1 x 0.250</span>
+          <span class="val" style="margin-left:auto;">0.0250</span>
+        </div>
+        <div style="padding:6px 0 0;display:flex;justify-content:space-between;border-top:0.5px solid var(--color-border-tertiary);margin-top:4px;">
+          <span class="lbl">total (denominator)</span>
+          <span class="val">0.0452</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+    <div class="snum">3</div>
+    <span style="font-size:13px;font-weight:500;">probability = score / total</span>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="font-size:13px;font-weight:500;min-width:40px;color:var(--color-text-primary);">to B</span>
+      <span class="mono" style="color:var(--color-text-secondary);min-width:130px;">0.0111 / 0.0452</span>
+      <div style="flex:1;height:10px;background:var(--color-background-primary);border-radius:5px;overflow:hidden;">
+        <div style="width:24.6%;height:10px;border-radius:5px;background:#888780;"></div>
+      </div>
+      <span style="font-size:14px;font-weight:500;min-width:44px;color:var(--color-text-primary);">24.6%</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="font-size:13px;font-weight:500;min-width:40px;color:var(--color-text-primary);">to C</span>
+      <span class="mono" style="color:var(--color-text-secondary);min-width:130px;">0.0028 / 0.0452</span>
+      <div style="flex:1;height:10px;background:var(--color-background-primary);border-radius:5px;overflow:hidden;">
+        <div style="width:6.2%;height:10px;border-radius:5px;background:#D85A30;"></div>
+      </div>
+      <span style="font-size:14px;font-weight:500;min-width:44px;color:var(--color-text-primary);">6.2%</span>
+      <span style="font-size:11px;padding:2px 7px;border-radius:99px;background:#FAECE7;color:#4A1B0C;">least likely</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="font-size:13px;font-weight:500;min-width:40px;color:var(--color-text-primary);">to D</span>
+      <span class="mono" style="color:var(--color-text-secondary);min-width:130px;">0.0063 / 0.0452</span>
+      <div style="flex:1;height:10px;background:var(--color-background-primary);border-radius:5px;overflow:hidden;">
+        <div style="width:13.9%;height:10px;border-radius:5px;background:#888780;"></div>
+      </div>
+      <span style="font-size:14px;font-weight:500;min-width:44px;color:var(--color-text-primary);">13.9%</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:13px;font-weight:500;min-width:40px;color:var(--color-text-primary);">to E</span>
+      <span class="mono" style="color:var(--color-text-secondary);min-width:130px;">0.0250 / 0.0452</span>
+      <div style="flex:1;height:10px;background:var(--color-background-primary);border-radius:5px;overflow:hidden;">
+        <div style="width:55.3%;height:10px;border-radius:5px;background:#1D9E75;"></div>
+      </div>
+      <span style="font-size:14px;font-weight:500;min-width:44px;color:var(--color-text-primary);">55.3%</span>
+      <span style="font-size:11px;padding:2px 7px;border-radius:99px;background:#E1F5EE;color:#085041;">most likely</span>
+    </div>
+    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;display:flex;justify-content:space-between;">
+      <span class="lbl">total</span>
+      <span class="val">24.6 + 6.2 + 13.9 + 55.3 = 100%</span>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;border-left:3px solid #1D9E75;border-radius:0;padding:10px 14px;background:#E1F5EE;">
+    <p style="font-size:13px;color:#085041;margin:0;line-height:1.6;">E is most likely at 55.3% — shortest edge (distance 2). C is least likely at 6.2% — longest edge (distance 6). The ant picks probabilistically — E has the best chance but any city could be chosen. This randomness keeps ants exploring different routes each iteration.</p>
+  </div>
+
+</div>
+
+</body>
+</html>
