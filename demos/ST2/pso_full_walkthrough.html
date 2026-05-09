@@ -1,0 +1,461 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full PSO Walkthrough</title>
+<style>
+*,
+*::before,
+*::after{box-sizing:border-box}
+:root{
+  --color-border-primary:#4d5570;
+  --color-border-secondary:#252830;
+  --color-border-tertiary:#1e2028;
+  --color-border-info:#2d5c89;
+  --color-background-primary:#0f1117;
+  --color-background-secondary:#1c1f2b;
+  --color-background-info:#1f2637;
+  --color-background-success:#123126;
+  --color-background-warning:#3a2b12;
+  --color-background-danger:#3a1818;
+  --color-text-primary:#e0d8c8;
+  --color-text-secondary:#a0988a;
+  --color-text-info:#85b7eb;
+  --color-text-success:#5dcaa5;
+  --color-text-warning:#ef9f27;
+  --color-text-danger:#f09595;
+  --border-radius-md:6px;
+  --border-radius-lg:10px;
+  --font-mono:"Consolas","SFMono-Regular","Liberation Mono",monospace;
+  --font-sans:"Segoe UI",Arial,sans-serif;
+}
+body{
+  margin:0;
+  padding:18px;
+  font-family:var(--font-sans);
+  background:#0f1117;
+  color:#e0d8c8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+h2{font-size:17px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px}
+h3{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:14px 0 6px}
+p{font-size:13px;color:var(--color-text-secondary);line-height:1.7}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin:10px 0}
+.formula{font-family:var(--font-mono);font-size:13px;background:var(--color-background-secondary);padding:10px 14px;border-radius:var(--border-radius-md);margin:8px 0;color:var(--color-text-primary);line-height:2.0}
+.why{background:var(--color-background-warning);border-radius:var(--border-radius-md);padding:8px 12px;font-size:13px;color:var(--color-text-warning);margin:6px 0;line-height:1.6}
+.why::before{content:'💡 Why: ';font-weight:500}
+.note{background:var(--color-background-info);border-radius:var(--border-radius-md);padding:8px 12px;font-size:13px;color:var(--color-text-info);margin:6px 0;line-height:1.6}
+.success{background:var(--color-background-success);border-radius:var(--border-radius-md);padding:10px 14px;font-size:14px;color:var(--color-text-success);margin:8px 0;font-weight:500}
+.danger{background:var(--color-background-danger);border-radius:var(--border-radius-md);padding:8px 12px;font-size:13px;color:var(--color-text-danger);margin:6px 0}
+.step-block{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin:8px 0;overflow:hidden}
+.step-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-background-secondary);cursor:pointer;user-select:none}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--color-background-info);color:var(--color-text-info);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.step-title{font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1}
+.step-body{padding:14px 16px;border-top:0.5px solid var(--color-border-tertiary);display:none}
+.step-body.open{display:block}
+.chevron{font-size:12px;color:var(--color-text-secondary);transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+td,th{padding:7px 10px;border:0.5px solid var(--color-border-tertiary);text-align:left}
+th{background:var(--color-background-secondary);font-weight:500;color:var(--color-text-primary)}
+td{color:var(--color-text-secondary)}
+.mono{font-family:var(--font-mono);color:var(--color-text-primary)}
+.hl-blue{background:rgba(59,130,246,0.12);color:var(--color-text-info);font-family:var(--font-mono)}
+.hl-green{background:rgba(16,185,129,0.12);color:var(--color-text-success);font-family:var(--font-mono);font-weight:500}
+.hl-amber{background:rgba(245,158,11,0.12);color:var(--color-text-warning);font-family:var(--font-mono)}
+.hl-red{background:rgba(239,68,68,0.12);color:var(--color-text-danger);font-family:var(--font-mono)}
+
+/* component breakdown */
+.comp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0}
+.comp{border-radius:var(--border-radius-md);padding:10px 12px;border:0.5px solid var(--color-border-tertiary)}
+.comp-label{font-size:11px;font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.comp-calc{font-family:var(--font-mono);font-size:12px;color:var(--color-text-secondary);line-height:1.7}
+.comp-result{font-family:var(--font-mono);font-size:15px;font-weight:600;margin-top:4px}
+.c-inertia{background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.3)}
+.c-inertia .comp-label{color:#7c3aed}
+.c-inertia .comp-result{color:#7c3aed}
+.c-cognitive{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.3)}
+.c-cognitive .comp-label{color:var(--color-text-info)}
+.c-cognitive .comp-result{color:var(--color-text-info)}
+.c-social{background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3)}
+.c-social .comp-label{color:var(--color-text-success)}
+.c-social .comp-result{color:var(--color-text-success)}
+
+/* number line */
+.nline-wrap{margin:12px 0;overflow-x:auto}
+canvas{display:block;border-radius:var(--border-radius-md)}
+
+/* calculator */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:var(--color-text-secondary);font-weight:500;text-transform:uppercase}
+.field input{padding:6px 10px;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)}
+.run-btn{padding:8px 20px;font-size:13px;border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);background:var(--color-background-info);color:var(--color-text-info);cursor:pointer;margin-top:8px;width:100%}
+.run-btn:hover{opacity:0.85}
+#calc-out{margin-top:8px}
+.tab-row{display:flex;gap:6px;margin-bottom:12px}
+.tab{padding:5px 14px;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer}
+.tab.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.pane{display:none}.pane.active{display:block}
+
+@media (max-width: 700px){
+  .comp-row{grid-template-columns:1fr}
+  .calc-grid{grid-template-columns:1fr}
+  canvas{width:100%;height:auto}
+}
+</style>
+</head>
+<body>
+
+<h2>Particle Swarm Optimisation — Full Walkthrough</h2>
+
+<div class="tab-row">
+  <button class="tab active" onclick="sw('theory')">The formula</button>
+  <button class="tab" onclick="sw('tutorial')">Tutorial example</button>
+  <button class="tab" onclick="sw('calc')">Practice calculator</button>
+  <button class="tab" onclick="sw('traps')">Exam traps</button>
+</div>
+
+<!-- THEORY -->
+<div id="p-theory" class="pane active">
+
+<div class="card">
+<h3>The two equations — these are the ONLY things you compute</h3>
+<div class="formula">VELOCITY UPDATE:
+v(t+1) = w·v(t)  +  c1·r1·(pbest - x(t))  +  c2·r2·(gbest - x(t))
+
+POSITION UPDATE:
+x(t+1) = x(t) + v(t+1)</div>
+<p style="margin-top:8px">That's it. Two lines. Every PSO exam question reduces to these two equations.</p>
+</div>
+
+<h3>What each variable means</h3>
+<table>
+  <tr><th>Variable</th><th>Name</th><th>What it is</th></tr>
+  <tr><td class="mono">x(t)</td><td>Current position</td><td>Where the particle is right now</td></tr>
+  <tr><td class="mono">v(t)</td><td>Current velocity</td><td>How fast and which direction it's moving</td></tr>
+  <tr><td class="mono">pbest</td><td>Personal best</td><td>Best position THIS particle has ever been at</td></tr>
+  <tr><td class="mono">gbest</td><td>Global best</td><td>Best position ANY particle in the swarm has ever been at</td></tr>
+  <tr><td class="mono">w</td><td>Inertia weight</td><td>How much the current velocity carries over</td></tr>
+  <tr><td class="mono">c1</td><td>Cognitive coefficient</td><td>How strongly the particle is pulled toward its own best</td></tr>
+  <tr><td class="mono">c2</td><td>Social coefficient</td><td>How strongly the particle is pulled toward the swarm's best</td></tr>
+  <tr><td class="mono">r1, r2</td><td>Random values</td><td>Between 0 and 1 — add randomness to the search</td></tr>
+</table>
+
+<h3>The three components of velocity</h3>
+<div class="comp-row">
+  <div class="comp c-inertia">
+    <div class="comp-label">🔵 Inertia</div>
+    <div class="comp-calc">w · v(t)</div>
+    <p style="font-size:12px;margin-top:6px;color:var(--color-text-secondary)">"Keep going in the same direction." Like a ball rolling — it doesn't stop instantly.</p>
+  </div>
+  <div class="comp c-cognitive">
+    <div class="comp-label">🟢 Cognitive</div>
+    <div class="comp-calc">c1·r1·(pbest - x)</div>
+    <p style="font-size:12px;margin-top:6px;color:var(--color-text-secondary)">"Go back to the best place YOU found." Your personal memory pulling you back.</p>
+  </div>
+  <div class="comp c-social">
+    <div class="comp-label">🟡 Social</div>
+    <div class="comp-calc">c2·r2·(gbest - x)</div>
+    <p style="font-size:12px;margin-top:6px;color:var(--color-text-secondary)">"Go toward where the SWARM found the best." Following the crowd's best discovery.</p>
+  </div>
+</div>
+
+<div class="why">If pbest &gt; x(t), the cognitive term is positive (pulls right). If pbest &lt; x(t), it's negative (pulls left). Same logic for social. The particle is always being tugged in two directions at once — its own memory vs the swarm's knowledge.</div>
+
+</div>
+
+<!-- TUTORIAL -->
+<div id="p-tutorial" class="pane">
+<div class="card">
+<h3>Tutorial 5 values</h3>
+<table>
+  <tr><th>Parameter</th><th>Value</th><th>What it means</th></tr>
+  <tr><td>x(t)</td><td class="mono">10</td><td>Particle is at position 10</td></tr>
+  <tr><td>v(t)</td><td class="mono">2</td><td>Moving in positive direction at speed 2</td></tr>
+  <tr><td>pbest</td><td class="mono">5</td><td>Best position this particle found = 5</td></tr>
+  <tr><td>gbest</td><td class="mono">12</td><td>Best position in whole swarm = 12</td></tr>
+  <tr><td>w</td><td class="mono">0.8</td><td>80% of current velocity carries over</td></tr>
+  <tr><td>c1</td><td class="mono">2.0</td><td>Cognitive pull strength</td></tr>
+  <tr><td>c2</td><td class="mono">2.0</td><td>Social pull strength</td></tr>
+  <tr><td>r1</td><td class="mono">0.5</td><td>Random value 1</td></tr>
+  <tr><td>r2</td><td class="mono">0.3</td><td>Random value 2</td></tr>
+</table>
+</div>
+
+<div class="step-block">
+<div class="step-header" onclick="tog(this)">
+  <div class="step-num">1</div>
+  <div class="step-title">Compute the three velocity components separately</div>
+  <div class="chevron open">▼</div>
+</div>
+<div class="step-body open">
+  <p>Always break the velocity formula into 3 parts first. Much easier and you get method marks for each part.</p>
+  <div class="comp-row">
+    <div class="comp c-inertia">
+      <div class="comp-label">Inertia</div>
+      <div class="comp-calc">w · v(t)<br>= 0.8 × 2</div>
+      <div class="comp-result">= 1.6</div>
+    </div>
+    <div class="comp c-cognitive">
+      <div class="comp-label">Cognitive</div>
+      <div class="comp-calc">c1·r1·(pbest-x)<br>= 2.0×0.5×(5-10)<br>= 1.0 × (-5)</div>
+      <div class="comp-result">= -5.0</div>
+    </div>
+    <div class="comp c-social">
+      <div class="comp-label">Social</div>
+      <div class="comp-calc">c2·r2·(gbest-x)<br>= 2.0×0.3×(12-10)<br>= 0.6 × 2</div>
+      <div class="comp-result">= 1.2</div>
+    </div>
+  </div>
+  <div class="why">The cognitive term is NEGATIVE because pbest (5) is less than x (10) — the particle's personal best is to the LEFT of where it currently is, so it gets pulled left (negative direction). The social term is POSITIVE because gbest (12) is to the RIGHT of x (10).</div>
+</div>
+</div>
+
+<div class="step-block">
+<div class="step-header" onclick="tog(this)">
+  <div class="step-num">2</div>
+  <div class="step-title">Add the three components to get new velocity</div>
+  <div class="chevron">▼</div>
+</div>
+<div class="step-body">
+  <div class="formula">v(t+1) = inertia + cognitive + social
+v(t+1) = 1.6 + (-5.0) + 1.2
+v(t+1) = 1.6 - 5.0 + 1.2
+v(t+1) = -2.2</div>
+  <div class="why">The result is negative — this means the particle will move LEFT (toward smaller values) on the next step. The strong cognitive pull toward pbest=5 (which is far left of x=10) dominates over the social pull toward gbest=12.</div>
+</div>
+</div>
+
+<div class="step-block">
+<div class="step-header" onclick="tog(this)">
+  <div class="step-num">3</div>
+  <div class="step-title">Compute new position</div>
+  <div class="chevron">▼</div>
+</div>
+<div class="step-body">
+  <div class="formula">x(t+1) = x(t) + v(t+1)
+x(t+1) = 10 + (-2.2)
+x(t+1) = 7.8</div>
+  <div class="success">✓ New velocity = -2.2 &nbsp;&nbsp; New position = 7.8</div>
+  <div class="note">The particle moved from 10 to 7.8 — it moved LEFT toward pbest=5, even though gbest=12 is to the right. This happened because c1·r1 (1.0) pulled harder than c2·r2 (0.6), and pbest was 5 units away while gbest was only 2 units away.</div>
+</div>
+</div>
+
+<div class="step-block">
+<div class="step-header" onclick="tog(this)">
+  <div class="step-num">4</div>
+  <div class="step-title">Update pbest and gbest? (what happens after position update)</div>
+  <div class="chevron">▼</div>
+</div>
+<div class="step-body">
+  <p>After moving to x=7.8, we evaluate the fitness of this new position:</p>
+  <div class="formula">If f(7.8) is better than f(pbest=5):
+  → update pbest = 7.8
+
+If f(7.8) is better than f(gbest=12):
+  → update gbest = 7.8
+
+Otherwise:
+  → pbest and gbest stay the same</div>
+  <div class="why">pbest and gbest are only ever updated to BETTER positions, never worse. They represent the best positions found so far — they don't reset each iteration.</div>
+</div>
+</div>
+
+<div class="card">
+<h3>Number line — visualising the pull</h3>
+<canvas id="nline" width="620" height="100"></canvas>
+</div>
+
+</div>
+
+<!-- CALCULATOR -->
+<div id="p-calc" class="pane">
+<div class="card">
+<h3>PSO calculator — practice with any values</h3>
+<p>Enter values and see the full working. Great for checking your hand calculations.</p>
+<div class="calc-grid">
+  <div class="field"><label>x(t) — current position</label><input id="cx" type="number" value="10"></div>
+  <div class="field"><label>v(t) — current velocity</label><input id="cv" type="number" value="2"></div>
+  <div class="field"><label>pbest — personal best</label><input id="pb" type="number" value="5"></div>
+  <div class="field"><label>gbest — global best</label><input id="gb" type="number" value="12"></div>
+  <div class="field"><label>w — inertia weight</label><input id="w" type="number" value="0.8" step="0.1"></div>
+  <div class="field"><label>c1 — cognitive coeff</label><input id="c1" type="number" value="2.0" step="0.1"></div>
+  <div class="field"><label>c2 — social coeff</label><input id="c2" type="number" value="2.0" step="0.1"></div>
+  <div class="field"><label>r1 — random value 1</label><input id="r1" type="number" value="0.5" step="0.1" min="0" max="1"></div>
+  <div class="field" style="grid-column:1"><label>r2 — random value 2</label><input id="r2" type="number" value="0.3" step="0.1" min="0" max="1"></div>
+</div>
+<button class="run-btn" onclick="runCalc()">Calculate →</button>
+<div id="calc-out"></div>
+</div>
+</div>
+
+<!-- TRAPS -->
+<div id="p-traps" class="pane">
+<div class="card">
+<h3>Common exam mistakes</h3>
+
+<div class="danger">
+  ❌ <strong>Using v(t) in the position update instead of v(t+1)</strong><br>
+  You MUST compute the new velocity first, then use that new velocity to update position. Never do x(t+1) = x(t) + v(t).
+</div>
+
+<div class="danger">
+  ❌ <strong>Getting the sign wrong on cognitive/social terms</strong><br>
+  If pbest &lt; x, then (pbest - x) is NEGATIVE. If pbest &gt; x, it's POSITIVE. Draw it on a number line if unsure.
+</div>
+
+<div class="danger">
+  ❌ <strong>Saying PSO updates based on "average position" (Q8 from your past paper)</strong><br>
+  It's pbest AND gbest — not the average. You lost 2 marks on this in the past paper.
+</div>
+
+<div class="danger">
+  ❌ <strong>Forgetting to multiply c1·r1 together before multiplying by (pbest-x)</strong><br>
+  The formula is c1 × r1 × (pbest - x), not c1 × (r1 × pbest - x).
+</div>
+
+<div class="note">
+  ✓ <strong>Always show your working in 3 separate lines</strong> — inertia, cognitive, social — then add them. Even if your final answer is wrong, you get method marks for each correct component.
+</div>
+
+<div class="note">
+  ✓ <strong>PSO is for continuous optimisation</strong> — particles have real-valued positions and velocities. It doesn't work naturally for discrete/binary problems like the Knapsack problem (that's GA's territory).
+</div>
+
+<h3>Quick-fire MCQ facts to remember</h3>
+<table>
+  <tr><th>Question type</th><th>Answer</th></tr>
+  <tr><td>PSO updates velocity based on pbest and the...</td><td class="hl-green">global best (gbest)</td></tr>
+  <tr><td>PSO is suited for...</td><td class="hl-green">continuous and differentiable functions</td></tr>
+  <tr><td>In PSO, each solution is represented as a...</td><td class="hl-green">particle</td></tr>
+  <tr><td>High inertia w means...</td><td class="hl-green">more exploration (keeps moving)</td></tr>
+  <tr><td>Low inertia w means...</td><td class="hl-green">more exploitation (slows down, converges)</td></tr>
+  <tr><td>r1 and r2 are...</td><td class="hl-green">random values between 0 and 1</td></tr>
+  <tr><td>c1 controls pull toward...</td><td class="hl-green">personal best (cognitive)</td></tr>
+  <tr><td>c2 controls pull toward...</td><td class="hl-green">global best (social)</td></tr>
+</table>
+</div>
+</div>
+
+<script>
+function sw(id){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='tutorial') drawNline();
+}
+function tog(h){
+  const b=h.nextElementSibling,c=h.querySelector('.chevron');
+  b.classList.toggle('open');c.classList.toggle('open');
+}
+document.querySelectorAll('.step-body.open').forEach(b=>{});
+document.querySelectorAll('.chevron.open').forEach(c=>{});
+
+function drawNline(){
+  const canvas=document.getElementById('nline');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const W=620,H=100;
+  ctx.clearRect(0,0,W,H);
+
+  const min=0,max=16;
+  const toX=v=>40+(v-min)/(max-min)*(W-80);
+
+  // axis
+  ctx.beginPath();ctx.moveTo(40,55);ctx.lineTo(W-40,55);
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)';
+  ctx.lineWidth=1.5;ctx.stroke();
+
+  // tick marks
+  for(let i=0;i<=max;i++){
+    const x=toX(i);
+    ctx.beginPath();ctx.moveTo(x,50);ctx.lineTo(x,60);
+    ctx.strokeStyle=dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)';
+    ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle=dark?'#6b7280':'#9ca3af';
+    ctx.font='10px var(--font-sans)';ctx.textAlign='center';
+    ctx.fillText(i,x,72);
+  }
+
+  const points=[
+    {v:5,  label:'pbest=5',  color:'#3b82f6', y:30, arrow:'right'},
+    {v:10, label:'x=10',     color:'#f59e0b', y:55, arrow:null},
+    {v:12, label:'gbest=12', color:'#10b981', y:30, arrow:'left'},
+    {v:7.8,label:'x\'=7.8', color:'#a78bfa', y:78, arrow:null},
+  ];
+
+  // arrows showing pull
+  // cognitive: x→pbest (left)
+  const ax=toX(10), bx=toX(5);
+  ctx.beginPath();ctx.moveTo(ax,45);ctx.lineTo(bx+8,45);
+  ctx.strokeStyle='rgba(59,130,246,0.6)';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(bx+8,41);ctx.lineTo(bx,45);ctx.lineTo(bx+8,49);
+  ctx.fillStyle='rgba(59,130,246,0.6)';ctx.fill();
+
+  // social: x→gbest (right)
+  const cx2=toX(10), dx=toX(12);
+  ctx.beginPath();ctx.moveTo(cx2,38);ctx.lineTo(dx-8,38);
+  ctx.strokeStyle='rgba(16,185,129,0.6)';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(dx-8,34);ctx.lineTo(dx,38);ctx.lineTo(dx-8,42);
+  ctx.fillStyle='rgba(16,185,129,0.6)';ctx.fill();
+
+  points.forEach(pt=>{
+    const x=toX(pt.v);
+    ctx.beginPath();ctx.arc(x,55,6,0,Math.PI*2);
+    ctx.fillStyle=pt.color;ctx.fill();
+    ctx.fillStyle=pt.color;
+    ctx.font='11px var(--font-sans)';ctx.textAlign='center';
+    const ly=pt.y<55?pt.y:pt.y+4;
+    ctx.fillText(pt.label,x,ly);
+  });
+
+  // legend
+  ctx.font='11px var(--font-sans)';ctx.textAlign='left';
+  ctx.fillStyle='rgba(59,130,246,0.8)';ctx.fillText('← cognitive pull (toward pbest)',42,92);
+  ctx.fillStyle='rgba(16,185,129,0.8)';ctx.fillText('    social pull (toward gbest) →',300,92);
+}
+
+function runCalc(){
+  const x=parseFloat(document.getElementById('cx').value);
+  const v=parseFloat(document.getElementById('cv').value);
+  const pb=parseFloat(document.getElementById('pb').value);
+  const gb=parseFloat(document.getElementById('gb').value);
+  const w=parseFloat(document.getElementById('w').value);
+  const c1=parseFloat(document.getElementById('c1').value);
+  const c2=parseFloat(document.getElementById('c2').value);
+  const r1=parseFloat(document.getElementById('r1').value);
+  const r2=parseFloat(document.getElementById('r2').value);
+
+  const inertia=w*v;
+  const cognitive=c1*r1*(pb-x);
+  const social=c2*r2*(gb-x);
+  const vNew=inertia+cognitive+social;
+  const xNew=x+vNew;
+
+  const f=n=>n.toFixed(4);
+
+  document.getElementById('calc-out').innerHTML=`
+  <div class="formula">Step 1 — three components:
+
+  Inertia   = w × v(t)              = ${w} × ${v}           = <strong>${f(inertia)}</strong>
+  Cognitive = c1 × r1 × (pbest-x)  = ${c1}×${r1}×(${pb}-${x}) = ${c1*r1} × ${pb-x} = <strong>${f(cognitive)}</strong>
+  Social    = c2 × r2 × (gbest-x)  = ${c2}×${r2}×(${gb}-${x})  = ${c2*r2} × ${gb-x}  = <strong>${f(social)}</strong>
+
+Step 2 — velocity update:
+  v(t+1) = ${f(inertia)} + (${f(cognitive)}) + ${f(social)}
+  v(t+1) = <strong>${f(vNew)}</strong>
+
+Step 3 — position update:
+  x(t+1) = x(t) + v(t+1)
+  x(t+1) = ${x} + (${f(vNew)})
+  x(t+1) = <strong>${f(xNew)}</strong></div>
+  <div class="success">New velocity = ${f(vNew)} &nbsp;&nbsp; New position = ${f(xNew)}</div>`;
+}
+</script>
+</body>
+</html>

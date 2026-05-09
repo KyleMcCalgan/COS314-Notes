@@ -8,6 +8,14 @@
 <style>
   :root { --accent: #4c91c3; --accent2: #78a93a; --accent3: #b7683d; }
   .hero::before { content: '05'; }
+  .demo-frame {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -157,6 +165,12 @@ x(t+1) = x(t) + v(t+1)
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Full PSO Walkthrough</h2>
+    <p>This walkthrough ties the topic together from the two PSO equations through a tutorial example, practice calculator, and common exam traps around <code>pbest</code>, <code>gbest</code>, and continuous optimisation.</p>
+    <iframe class="demo-frame" src="demos/ST2/pso_full_walkthrough.html" title="Full Particle Swarm Optimisation Walkthrough" style="height: 1200px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Exam Checklist</h2>
     <ul class="checklist">
       <li class="done">State what each particle stores.</li>
@@ -180,6 +194,23 @@ x(t+1) = x(t) + v(t+1)
     bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
   }, { passive: true });
 })();
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      if (!doc) return;
+      const resize = function () {
+        const height = Math.max(
+          doc.body ? doc.body.scrollHeight : 0,
+          doc.documentElement ? doc.documentElement.scrollHeight : 0
+        );
+        if (height) frame.style.height = height + 'px';
+      };
+      resize();
+      new ResizeObserver(resize).observe(doc.body);
+    } catch (e) {}
+  });
+});
 </script>
 </body>
 </html>
