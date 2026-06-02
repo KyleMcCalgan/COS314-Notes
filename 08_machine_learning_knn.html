@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Machine Learning and KNN</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #4c91c3; --accent2: #78a93a; --accent3: #c1862b; }
+  .hero::before { content: '08'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="00_final_exam_scope.html"><- Scope Map</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="09_ann_deep_learning.html">ANN and Deep Learning -></a>
+</nav>
+
+<div class="hero">
+  <div class="tag">COS314 | Machine Learning</div>
+  <h1>Machine Learning and K-Nearest Neighbour</h1>
+  <p class="subtitle">The supervised-learning basics, distance metrics, and KNN calculation pattern listed in the final exam scope.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Machine Learning Basics</h2>
+    <p>Machine learning uses data to build a model or decision procedure that can make predictions on unseen cases. The important exam idea is <strong>generalisation</strong>: a model should perform well on new data, not only on the examples it saw during training.</p>
+    <div class="grid2">
+      <div class="card">
+        <strong>Supervised learning</strong>
+        Training examples include labels or target values. Classification predicts a category; regression predicts a numeric value.
+      </div>
+      <div class="card blue">
+        <strong>Unsupervised learning</strong>
+        Training data has no class labels. The algorithm discovers structure, such as clusters.
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Instance</td><td>One row/example in the dataset.</td></tr>
+        <tr><td>Attribute or feature</td><td>One measured property of an instance.</td></tr>
+        <tr><td>Class label</td><td>The target category in classification.</td></tr>
+        <tr><td>Training set</td><td>Data used to learn or store the classification behaviour.</td></tr>
+        <tr><td>Test set</td><td>Unseen data used to estimate generalisation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>KNN Core Idea</h2>
+    <p>K-nearest neighbour is a supervised method for classification or regression. It is instance-based: it stores the training instances and delays real work until a new query point must be classified.</p>
+    <div class="card">
+      <strong>KNN rule</strong>
+      Find the k closest training instances to the new point. For classification, predict the majority class. For regression, predict the average target value.
+    </div>
+    <div class="topic-pills">
+      <div class="topic-pill">No explicit model</div>
+      <div class="topic-pill">Distance-based</div>
+      <div class="topic-pill">Sensitive to scaling</div>
+      <div class="topic-pill">Usually k = 3 or 5</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>KNN Algorithm</h2>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Prepare the data.</strong><p>Normalise or scale features when different attributes use different units.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Choose k.</strong><p>Small k is sensitive to noise. Larger k is smoother but may blur class boundaries.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Calculate distances.</strong><p>Compute the distance from the query point to every training point.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Select the k closest neighbours.</strong><p>Sort by distance and take the first k rows.</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><strong>Predict.</strong><p>Use majority voting for classification or averaging for regression.</p></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Distance Metrics</h2>
+    <div class="formula">Euclidean distance = sqrt(sum((p_i - q_i)^2))</div>
+    <div class="formula">Manhattan distance = sum(|p_i - q_i|)</div>
+    <table>
+      <thead><tr><th>Metric</th><th>Use</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Euclidean</td><td>Straight-line distance in numeric feature space.</td><td>sqrt((6 - 7)^2 + (4 - 2)^2) = sqrt(5) = 2.24</td></tr>
+        <tr><td>Manhattan</td><td>Axis-by-axis distance, like city blocks.</td><td>|12 - 4| + |9 - 2| = 15</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">If one feature has much larger numeric values than the others, it can dominate the distance. That is why normalisation is often needed before KNN.</div>
+  </div>
+
+  <div class="section">
+    <h2>Worked Classification Example</h2>
+    <p>Classify Q(6, 4) using k = 3.</p>
+    <table class="tight-table">
+      <thead><tr><th>Point</th><th>Class</th><th>Distance to Q</th><th>Rank</th></tr></thead>
+      <tbody>
+        <tr><td>P1 (2,4)</td><td>A</td><td>sqrt((6-2)^2 + (4-4)^2) = 4.00</td><td>3</td></tr>
+        <tr><td>P2 (5,8)</td><td>A</td><td>sqrt((6-5)^2 + (4-8)^2) = 4.12</td><td>4</td></tr>
+        <tr><td>P3 (1,6)</td><td>A</td><td>sqrt((6-1)^2 + (4-6)^2) = 5.39</td><td>5</td></tr>
+        <tr><td>P4 (7,2)</td><td>B</td><td>sqrt((6-7)^2 + (4-2)^2) = 2.24</td><td>1</td></tr>
+        <tr><td>P5 (9,5)</td><td>B</td><td>sqrt((6-9)^2 + (4-5)^2) = 3.16</td><td>2</td></tr>
+      </tbody>
+    </table>
+    <div class="card blue">
+      <strong>Prediction</strong>
+      The three nearest neighbours are P4, P5, and P1. Their classes are B, B, and A, so the majority class is B. Therefore Q is classified as Class B.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Exam Traps</h2>
+    <ul>
+      <li>KNN does not train a compact mathematical model; it stores examples and compares at prediction time.</li>
+      <li>For k = 1, the nearest single example decides the class.</li>
+      <li>For k = 3 or k = 5, majority vote improves robustness against noisy examples.</li>
+      <li>For regression, do not vote. Average the target values of the nearest neighbours.</li>
+      <li>Always show the distance table before giving the class prediction.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">COS314 Final Exam Pack | Machine Learning and KNN</div>
+</div>
+
+<script src="collapsible.js"></script>
+</body>
+</html>

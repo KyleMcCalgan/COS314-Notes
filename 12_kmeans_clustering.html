@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | K-means Clustering</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #8c67c1; --accent2: #4c91c3; --accent3: #c1862b; }
+  .hero::before { content: '12'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="11_hopfield_networks.html"><- Hopfield Networks</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="00_final_exam_scope.html">Scope Map -></a>
+</nav>
+
+<div class="hero">
+  <div class="tag">COS314 | Machine Learning</div>
+  <h1>K-means Clustering</h1>
+  <p class="subtitle">Unsupervised clustering, centroids, Euclidean distance, assignment/update iterations, and convergence.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Unsupervised Learning Context</h2>
+    <p>Clustering is unsupervised learning: the dataset has no class labels, and the algorithm groups similar instances together.</p>
+    <div class="grid2">
+      <div class="card">
+        <strong>Classification</strong>
+        Supervised. The model predicts known class labels.
+      </div>
+      <div class="card blue">
+        <strong>Clustering</strong>
+        Unsupervised. The algorithm discovers groups from similarity.
+      </div>
+    </div>
+    <div class="topic-pills">
+      <div class="topic-pill">Customer segmentation</div>
+      <div class="topic-pill">Document grouping</div>
+      <div class="topic-pill">Image compression</div>
+      <div class="topic-pill">Anomaly detection</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>K-means Core Idea</h2>
+    <p>K-means clusters a numerical dataset into K clusters. Each cluster is represented by a centroid, which is the mean of the points assigned to that cluster.</p>
+    <table>
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>K</td><td>The number of clusters to create.</td></tr>
+        <tr><td>Centroid</td><td>The average point of all instances currently assigned to a cluster.</td></tr>
+        <tr><td>Assignment phase</td><td>Assign each instance to the nearest centroid.</td></tr>
+        <tr><td>Update phase</td><td>Recalculate each centroid from its assigned instances.</td></tr>
+        <tr><td>Convergence</td><td>No instances move between clusters after an iteration.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">The standard algorithm requires numerical data because it uses distances and averages.</div>
+  </div>
+
+  <div class="section">
+    <h2>Algorithm</h2>
+    <div class="code">K-MEANS
+choose K
+randomly select K initial centroids
+while clusters have not converged:
+  for each data instance:
+    calculate distance to every centroid
+    assign instance to the closest centroid
+  for each cluster:
+    update centroid to the average of assigned instances
+return final clusters and centroids</div>
+    <div class="formula">Euclidean distance = sqrt((x1 - y1)^2 + (x2 - y2)^2 + ... + (xm - ym)^2)</div>
+    <div class="card purple">
+      <strong>Rounding rule from exam notice</strong>
+      Round to 2 decimal places at every step using standard 0.5 rounding. Do not carry unrounded figures into later steps.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Worked Example Setup</h2>
+    <p>Use K = 2. The initial centroids are Entity 2 and Entity 4.</p>
+    <table class="tight-table">
+      <thead><tr><th>Entity</th><th>Attr1</th><th>Attr2</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>1</td><td>1</td></tr>
+        <tr><td>2</td><td>1.5</td><td>2</td></tr>
+        <tr><td>3</td><td>3</td><td>4</td></tr>
+        <tr><td>4</td><td>5</td><td>7</td></tr>
+        <tr><td>5</td><td>3.5</td><td>5</td></tr>
+      </tbody>
+    </table>
+    <div class="formula">c1 = Entity 2 = (1.5, 2)</div>
+    <div class="formula">c2 = Entity 4 = (5, 7)</div>
+  </div>
+
+  <div class="section">
+    <h2>Iteration 1 Assignment</h2>
+    <table class="tight-table">
+      <thead><tr><th>Entity</th><th>To c1 (1.5,2)</th><th>To c2 (5,7)</th><th>Assign</th></tr></thead>
+      <tbody>
+        <tr><td>1 (1,1)</td><td>sqrt(0.25 + 1) = 1.12</td><td>sqrt(16 + 36) = 7.21</td><td>Cluster 1</td></tr>
+        <tr><td>3 (3,4)</td><td>sqrt(2.25 + 4) = 2.50</td><td>sqrt(4 + 9) = 3.61</td><td>Cluster 1</td></tr>
+        <tr><td>5 (3.5,5)</td><td>sqrt(4 + 9) = 3.61</td><td>sqrt(2.25 + 4) = 2.50</td><td>Cluster 2</td></tr>
+      </tbody>
+    </table>
+    <div class="card">
+      <strong>Clusters after assignment</strong>
+      Cluster 1 = {1, 2, 3}. Cluster 2 = {4, 5}.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Iteration 1 Centroid Update</h2>
+    <table>
+      <thead><tr><th>Cluster</th><th>Assigned entities</th><th>Updated centroid</th></tr></thead>
+      <tbody>
+        <tr><td>Cluster 1</td><td>1(1,1), 2(1.5,2), 3(3,4)</td><td>((1+1.5+3)/3, (1+2+4)/3) = (1.83, 2.33)</td></tr>
+        <tr><td>Cluster 2</td><td>4(5,7), 5(3.5,5)</td><td>((5+3.5)/2, (7+5)/2) = (4.25, 6.00)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Iteration 2 Assignment</h2>
+    <p>Now compare every entity to the updated centroids c1 = (1.83, 2.33) and c2 = (4.25, 6.00).</p>
+    <table class="tight-table">
+      <thead><tr><th>Entity</th><th>To c1</th><th>To c2</th><th>Assign</th></tr></thead>
+      <tbody>
+        <tr><td>1 (1,1)</td><td>1.57</td><td>5.96</td><td>Cluster 1</td></tr>
+        <tr><td>2 (1.5,2)</td><td>0.46</td><td>4.85</td><td>Cluster 1</td></tr>
+        <tr><td>3 (3,4)</td><td>2.04</td><td>2.35</td><td>Cluster 1</td></tr>
+        <tr><td>4 (5,7)</td><td>5.64</td><td>1.25</td><td>Cluster 2</td></tr>
+        <tr><td>5 (3.5,5)</td><td>3.15</td><td>1.25</td><td>Cluster 2</td></tr>
+      </tbody>
+    </table>
+    <div class="card blue">
+      <strong>Convergence</strong>
+      No entity moved between clusters compared with Iteration 1. The algorithm has converged.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Advantages and Limitations</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Advantages</strong>
+        Simple, fast, intuitive, and often converges quickly when clusters are well separated.
+      </div>
+      <div class="card red">
+        <strong>Limitations</strong>
+        Sensitive to initial centroids, outliers, and the chosen value of K. Assumes roughly spherical clusters and numeric attributes.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>K-means vs K-medoids</h2>
+    <table>
+      <thead><tr><th>Feature</th><th>K-means</th><th>K-medoids</th></tr></thead>
+      <tbody>
+        <tr><td>Representative</td><td>Mean of assigned points, not necessarily a real data point.</td><td>An actual data point from the cluster.</td></tr>
+        <tr><td>Outliers</td><td>More sensitive.</td><td>More robust.</td></tr>
+        <tr><td>Data</td><td>Requires numerical averaging.</td><td>Can use broader dissimilarity measures.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">K-medoids is background in the notes. The screenshot explicitly lists K-means clustering, so K-means is the calculation priority.</div>
+  </div>
+
+  <div class="nav-hint">COS314 Final Exam Pack | K-means Clustering</div>
+</div>
+
+<script src="collapsible.js"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Final Exam Scope</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #c8a84a; --accent2: #4c91c3; --accent3: #b05848; }
+  .hero::before { content: 'EX'; }
+  .scope-status {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .scope-status.covered { color: var(--accent2); }
+  .scope-status.new { color: var(--accent); }
+  .scope-status.extra { color: var(--accent3); }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="index.html"><- Index</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="08_machine_learning_knn.html">Machine Learning -></a>
+</nav>
+
+<div class="hero">
+  <div class="tag">COS314 | Final Exam</div>
+  <h1>Scope Cross-Reference</h1>
+  <p class="subtitle">A map from the final exam screenshot to the existing pages and the new machine-learning pages.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Validation Result</h2>
+    <div class="card">
+      <strong>Claim checked</strong>
+      The required non-machine-learning scope is already covered by the existing notes pages. The new work needed for this pack is the machine-learning block: KNN, ANN/deep learning, backpropagation, Hopfield networks, and K-means.
+    </div>
+    <div class="callout">Some existing pages contain extra sections that are useful background but are not listed in the final exam screenshot. Use the table below to avoid spending time on excluded sections first.</div>
+  </div>
+
+  <div class="section">
+    <h2>Exam Scope Map</h2>
+    <table>
+      <thead>
+        <tr><th>Scope item</th><th>Status</th><th>Use these pages</th><th>Study note</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Theory of search and properties of search</td>
+          <td><span class="scope-status covered">covered</span></td>
+          <td><a href="01_problem_representation.html">Problem Representation</a>, <a href="03_dfs_dfid_bfs.html">DFS/DFID/BFS</a></td>
+          <td>Representation, state spaces, tree vs graph, completeness, optimality, time, and space.</td>
+        </tr>
+        <tr>
+          <td>Uninformed search: BFS, DFS, DFID</td>
+          <td><span class="scope-status covered">covered</span></td>
+          <td><a href="03_dfs_dfid_bfs.html">DFS, DFID and BFS</a></td>
+          <td>Focus on OPEN/CLOSED behaviour, expansion order, depth limits, and properties.</td>
+        </tr>
+        <tr>
+          <td>Heuristics, informed search, A*</td>
+          <td><span class="scope-status covered">covered</span></td>
+          <td><a href="02_heuristics.html">Heuristics</a>, <a href="04_hill_climbing_astar.html">Hill Climbing and A*</a></td>
+          <td>Focus on admissibility, f(n) = g(n) + h(n), and A* worked examples.</td>
+        </tr>
+        <tr>
+          <td>Single-point searches: ILS, Tabu Search</td>
+          <td><span class="scope-status covered">covered</span></td>
+          <td><a href="06_sa_tabu_ils.html">SA, Tabu and ILS</a></td>
+          <td>Use the Tabu and ILS sections. Simulated annealing appears on the page but is not in the screenshot scope.</td>
+        </tr>
+        <tr>
+          <td>Multipoint searches: GA, GE, PSO</td>
+          <td><span class="scope-status covered">covered</span></td>
+          <td><a href="02_genetic_algorithms.html">Genetic Algorithms</a>, <a href="06_grammatical_evolution.html">Grammatical Evolution</a>, <a href="05_particle_swarm_optimisation.html">PSO</a></td>
+          <td>Use the newer ST2 GA page for selection/crossover/mutation details.</td>
+        </tr>
+        <tr>
+          <td>Machine Learning: KNN</td>
+          <td><span class="scope-status new">new page</span></td>
+          <td><a href="08_machine_learning_knn.html">Machine Learning and KNN</a></td>
+          <td>Distance metrics, voting, normalisation, and worked classification.</td>
+        </tr>
+        <tr>
+          <td>Machine Learning: ANN properties and deep learning</td>
+          <td><span class="scope-status new">new page</span></td>
+          <td><a href="09_ann_deep_learning.html">ANN and Deep Learning</a></td>
+          <td>Neuron model, perceptron, MLP, activation functions, depth, width, loss, overfitting, transfer learning.</td>
+        </tr>
+        <tr>
+          <td>Machine Learning: Backpropagation and Hopfield networks</td>
+          <td><span class="scope-status new">new pages</span></td>
+          <td><a href="10_backpropagation.html">Backpropagation</a>, <a href="11_hopfield_networks.html">Hopfield Networks</a></td>
+          <td>Backprop training cycle and Hopfield weight/application calculations.</td>
+        </tr>
+        <tr>
+          <td>Machine Learning: K-means clustering</td>
+          <td><span class="scope-status new">new page</span></td>
+          <td><a href="12_kmeans_clustering.html">K-means Clustering</a></td>
+          <td>Centroids, Euclidean distance, assignment/update phases, convergence, and rounding.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Sections Present In Notes But Excluded From Screenshot Scope</h2>
+    <table>
+      <thead>
+        <tr><th>Excluded or lower-priority section</th><th>Where it appears</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Minimax and alpha-beta pruning</td><td><a href="05_minimax_alphabeta.html">Existing ST1 page</a></td><td>Not listed in the final exam screenshot.</td></tr>
+        <tr><td>Simulated annealing</td><td><a href="06_sa_tabu_ils.html">Existing single-point page</a></td><td>The final scope names ILS and Tabu Search only.</td></tr>
+        <tr><td>Ant colony optimisation</td><td><a href="04_ant_colony_optimisation.html">Existing ST2 page</a></td><td>Not listed under final multipoint searches.</td></tr>
+        <tr><td>Genetic programming and selection-methods-only pages</td><td><a href="03_genetic_programming.html">GP</a>, <a href="01_selection_methods.html">Selection Methods</a></td><td>Useful EA background, but the final scope names GA, GE, and PSO.</td></tr>
+        <tr><td>Decision trees and random forests</td><td>Downloaded ML notes</td><td>Present in the notes, but not listed in the ML sub-scope.</td></tr>
+        <tr><td>Memetic algorithms</td><td>Downloaded memetic notes</td><td>Present in the notes, but not listed in the screenshot scope.</td></tr>
+        <tr><td>K-medoids, PCA, autoencoders, CNNs, LLMs</td><td>Downloaded ML/unsupervised notes</td><td>Related background, but the explicit clustering item is K-means.</td></tr>
+      </tbody>
+    </table>
+    <div class="card blue">
+      <strong>Practical interpretation</strong>
+      The provided notes cover more than the exam screenshot. That is useful, but for first-pass revision the pages linked in the scope map are the closest match to the listed examinable areas.
+    </div>
+  </div>
+
+  <div class="nav-hint">COS314 Final Exam Pack | Scope Cross-Reference</div>
+</div>
+
+<script src="collapsible.js"></script>
+</body>
+</html>

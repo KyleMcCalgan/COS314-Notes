@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Hopfield Networks</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #b05848; --accent2: #4c91c3; --accent3: #78a93a; }
+  .hero::before { content: '11'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="10_backpropagation.html"><- Backpropagation</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="12_kmeans_clustering.html">K-means -></a>
+</nav>
+
+<div class="hero">
+  <div class="tag">COS314 | Machine Learning</div>
+  <h1>Hopfield Neural Networks</h1>
+  <p class="subtitle">Recurrent autoassociative memory, weight-matrix training, and noisy-pattern recovery.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Associative Memory</h2>
+    <p>Associative memory networks store patterns or associations so that a later input can recover the stored output, even when the input is incomplete or noisy.</p>
+    <table>
+      <thead><tr><th>Network type</th><th>Direction</th><th>Input/output relation</th></tr></thead>
+      <tbody>
+        <tr><td>Autoassociative memory</td><td>Feedforward</td><td>Input and output vectors are the same.</td></tr>
+        <tr><td>Heteroassociative memory</td><td>Feedforward</td><td>Input and output vectors are different.</td></tr>
+        <tr><td>Bidirectional associative memory</td><td>Recurrent</td><td>Can map input to output and output back to input.</td></tr>
+        <tr><td>Hopfield network</td><td>Recurrent</td><td>Autoassociative; recovers stored patterns.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Hopfield Structure</h2>
+    <div class="card">
+      <strong>Definition</strong>
+      A Hopfield neural network is a recurrent autoassociative neural network. It is trained by determining a square weight matrix W.
+    </div>
+    <ul>
+      <li>If the pattern length is n, then W is an n by n matrix.</li>
+      <li>Every node connects to every other node.</li>
+      <li>Connections are symmetric: w_ij = w_ji.</li>
+      <li>Diagonal weights are always zero: w_ii = 0.</li>
+      <li>After training, the network can repair missing or incorrect components.</li>
+    </ul>
+    <div class="callout">Diagonal weights are zero so a neuron does not reinforce itself during the recurrent update.</div>
+  </div>
+
+  <div class="section">
+    <h2>Training Formulas</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Binary data</strong>
+        Convert each bit using 2p - 1, so 0 becomes -1 and 1 remains 1. Then use the outer product.
+      </div>
+      <div class="card blue">
+        <strong>Bipolar data</strong>
+        Use the vector directly because values are already -1 and 1.
+      </div>
+    </div>
+    <div class="formula">binary: w_ij = sum((2p_i - 1)(2p_j - 1)), for i != j</div>
+    <div class="formula">bipolar: w_ij = sum(p_i * p_j), for i != j</div>
+    <div class="formula">w_ii = 0</div>
+  </div>
+
+  <div class="section">
+    <h2>Application Algorithm</h2>
+    <div class="code">HOPFIELD APPLICATION
+set y = p
+while the network has not converged:
+  while each component has not been updated this epoch:
+    choose a component y_i
+    s_i = p_i + sum(y_j * w_ji)
+    if s_i > theta_i: y_i = 1
+    if s_i = theta_i: y_i stays unchanged
+    if s_i < theta_i: y_i = 0 for binary, or -1 for bipolar
+    update p according to y
+return stable y</div>
+    <table>
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>theta_i</td><td>Threshold for component i, often 0 in examples.</td></tr>
+        <tr><td>Epoch</td><td>One pass in which every y_i is updated once.</td></tr>
+        <tr><td>Convergence</td><td>No component of y changes from one complete epoch to the next.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Worked Binary Training Example</h2>
+    <p>Store the binary pattern [1, 0, 1]. First convert it to bipolar form.</p>
+    <div class="formula">[1, 0, 1] -> [1, -1, 1]</div>
+    <div class="ascii">Outer product before zeroing diagonal:
+[ 1] [ 1 -1  1]   [ 1 -1  1]
+[-1]             = [-1  1 -1]
+[ 1]               [ 1 -1  1]
+
+After setting the diagonal to zero:
+W = [ 0 -1  1]
+    [-1  0 -1]
+    [ 1 -1  0]</div>
+  </div>
+
+  <div class="section">
+    <h2>Worked Recovery Example</h2>
+    <p>Apply the trained network to noisy input p = [0, 0, 1]. Use theta_i = 0 and update y1, then y2, then y3.</p>
+    <div class="step-list">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Initialise.</strong><p>y = p = [0, 0, 1].</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Update y1.</strong><p>s1 = 0 + (0)(0) + (0)(-1) + (1)(1) = 1. Since s1 &gt; 0, y1 = 1. Now y = [1, 0, 1].</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Update y2.</strong><p>s2 = 0 + (1)(-1) + (0)(0) + (1)(-1) = -2. Since s2 &lt; 0, y2 = 0. y remains [1, 0, 1].</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Update y3.</strong><p>s3 = 1 + (1)(1) + (0)(-1) + (1)(0) = 2. Since s3 &gt; 0, y3 = 1. y remains [1, 0, 1].</p></div></div>
+    </div>
+    <div class="card blue">
+      <strong>Result</strong>
+      After one epoch, the network has recovered the stored pattern [1, 0, 1].
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Applications</h2>
+    <ul>
+      <li>Pattern completion from missing components.</li>
+      <li>Correction of noisy or corrupted binary/bipolar patterns.</li>
+      <li>Image restoration, segmentation, and boundary detection examples.</li>
+      <li>Associative recall, such as restoring a damaged stored signature or image-like pattern.</li>
+    </ul>
+  </div>
+
+  <div class="nav-hint">COS314 Final Exam Pack | Hopfield Networks</div>
+</div>
+
+<script src="collapsible.js"></script>
+</body>
+</html>

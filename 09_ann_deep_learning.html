@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | ANN and Deep Learning</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #78a93a; --accent2: #4c91c3; --accent3: #c1862b; }
+  .hero::before { content: '09'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="08_machine_learning_knn.html"><- KNN</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="10_backpropagation.html">Backpropagation -></a>
+</nav>
+
+<div class="hero">
+  <div class="tag">COS314 | Machine Learning</div>
+  <h1>Artificial Neural Networks and Deep Learning</h1>
+  <p class="subtitle">ANN properties, neuron models, perceptrons, multilayer networks, and the deep-learning concepts named in the final scope.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Computational Neuron</h2>
+    <p>An artificial neuron computes a weighted sum of inputs, adds a bias, then applies an activation function.</p>
+    <div class="formula">n = w1*p1 + w2*p2 + ... + wn*pn + b</div>
+    <div class="formula">a = f(n)</div>
+    <table>
+      <thead><tr><th>Part</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Input p</td><td>The feature vector supplied to the neuron.</td></tr>
+        <tr><td>Weights w</td><td>Learned values that control how strongly each input contributes.</td></tr>
+        <tr><td>Bias b</td><td>Learned offset that shifts the activation boundary.</td></tr>
+        <tr><td>Activation f</td><td>Transforms the weighted sum into the neuron's output.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>MCP Neuron and Linear Separability</h2>
+    <p>The McCulloch-Pitts neuron uses binary inputs, weights, a threshold, and a step activation. It can implement simple linearly separable logic such as AND and OR.</p>
+    <div class="formula">f(n) = 1 if n >= theta, else 0</div>
+    <div class="grid2">
+      <div class="card">
+        <strong>OR with w1 = 2, w2 = 2, theta = 2</strong>
+        Inputs 01, 10, and 11 reach the threshold. Input 00 does not.
+      </div>
+      <div class="card blue">
+        <strong>AND with w1 = 1, w2 = 1, theta = 2</strong>
+        Only input 11 reaches the threshold.
+      </div>
+    </div>
+    <div class="callout">A single MCP neuron cannot solve XOR because XOR is not linearly separable. A multilayer network is needed for non-linear decision boundaries.</div>
+  </div>
+
+  <div class="section">
+    <h2>Perceptron</h2>
+    <p>A perceptron is a supervised feedforward classifier. It learns weights and bias by repeatedly checking training instances and updating when the output is wrong.</p>
+    <div class="code">PERCEPTRON LEARNING
+initialise weights and bias
+repeat until convergence:
+  for each training instance p with target t:
+    n = w dot p + b
+    output = f(n)
+    if output != t:
+      w_i = w_i + alpha * (t - output) * p_i
+      b   = b   + alpha * (t - output)</div>
+    <table>
+      <thead><tr><th>Property</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Feedforward</td><td>Signals move from input to output without feedback loops.</td></tr>
+        <tr><td>Converges when possible</td><td>If the data is linearly separable, learning can settle on a separating boundary.</td></tr>
+        <tr><td>Limitation</td><td>A single layer cannot solve non-linearly separable problems such as XOR.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>MLP Architecture</h2>
+    <p>A multilayer perceptron has an input layer, one or more hidden layers, and an output layer. Hidden layers let the network learn non-linear mappings.</p>
+    <div class="ascii">Input layer       Hidden layer        Output layer
+p1  p2  p3   ->   h1  h2  ...   ->   output nodes</div>
+    <div class="grid2">
+      <div class="card">
+        <strong>Depth</strong>
+        Number of computational layers, usually hidden layers plus output layer. More depth can model more complex transformations.
+      </div>
+      <div class="card blue">
+        <strong>Width</strong>
+        Number of neurons in a layer. Too little width can underfit; too much can overfit.
+      </div>
+    </div>
+    <div class="card purple">
+      <strong>Model scaling</strong>
+      Modern deep models usually scale both depth and width. Making a model deeper without enough width can create information bottlenecks.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Activation Functions</h2>
+    <table>
+      <thead><tr><th>Activation</th><th>Formula or role</th><th>Typical use</th></tr></thead>
+      <tbody>
+        <tr><td>Binary sigmoid</td><td>f(n) = 1 / (1 + e^-n)</td><td>Classic backpropagation examples and binary outputs.</td></tr>
+        <tr><td>Bipolar sigmoid</td><td>Range is (-1, 1)</td><td>Bipolar targets or bipolar hidden activations.</td></tr>
+        <tr><td>ReLU</td><td>f(n) = max(0, n)</td><td>Common hidden-layer activation in deep learning.</td></tr>
+        <tr><td>Softmax</td><td>Outputs class probabilities that sum to 1</td><td>Multiclass output layer.</td></tr>
+        <tr><td>Tanh</td><td>Range is (-1, 1)</td><td>Hidden activations when centred output is useful.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">For backpropagation, activation functions must be differentiable because the algorithm needs derivatives to compute gradients.</div>
+  </div>
+
+  <div class="section">
+    <h2>Deep Learning</h2>
+    <p>A deep neural network has many hidden layers. The distinction from a standard multilayer network is mainly scale: deep networks may have dozens or hundreds of layers.</p>
+    <div class="topic-pills">
+      <div class="topic-pill">Many hidden layers</div>
+      <div class="topic-pill">Accuracy and loss</div>
+      <div class="topic-pill">Large data needs</div>
+      <div class="topic-pill">Libraries: TensorFlow, Keras, PyTorch</div>
+    </div>
+    <table>
+      <thead><tr><th>Concept</th><th>Exam wording</th></tr></thead>
+      <tbody>
+        <tr><td>Loss</td><td>Measures the error between network output and target values.</td></tr>
+        <tr><td>Optimiser</td><td>Uses gradients to update weights and reduce loss.</td></tr>
+        <tr><td>Overfitting</td><td>High training accuracy but poor test accuracy.</td></tr>
+        <tr><td>Transfer learning</td><td>Reuse weights/features from a model pretrained on another dataset.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Overfitting Controls</h2>
+    <div class="grid2">
+      <div class="card">
+        <strong>Regularisation</strong>
+        Adds a penalty for large weights so the model is less likely to memorise noise.
+      </div>
+      <div class="card blue">
+        <strong>Early stopping</strong>
+        Stop training when validation performance starts getting worse.
+      </div>
+      <div class="card blue">
+        <strong>Dropout</strong>
+        Randomly deactivate neurons during training so the model learns robust representations.
+      </div>
+      <div class="card purple">
+        <strong>Reduce model size</strong>
+        Fewer layers or neurons can reduce excessive capacity.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Loss Functions By Task</h2>
+    <table>
+      <thead><tr><th>Task</th><th>Common loss</th></tr></thead>
+      <tbody>
+        <tr><td>Regression, such as house prices</td><td>Mean squared error or mean absolute error.</td></tr>
+        <tr><td>Binary classification, such as spam/not spam</td><td>Binary cross-entropy.</td></tr>
+        <tr><td>Multiclass classification, such as digits 0 to 9</td><td>Categorical or multiclass cross-entropy.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="nav-hint">COS314 Final Exam Pack | ANN and Deep Learning</div>
+</div>
+
+<script src="collapsible.js"></script>
+</body>
+</html>

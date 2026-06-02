@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COS314 | Backpropagation</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root { --accent: #c1862b; --accent2: #4c91c3; --accent3: #78a93a; }
+  .hero::before { content: '10'; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="09_ann_deep_learning.html"><- ANN and Deep Learning</a>
+  <a class="home" href="index.html">Home</a>
+  <a href="11_hopfield_networks.html">Hopfield Networks -></a>
+</nav>
+
+<div class="hero">
+  <div class="tag">COS314 | Machine Learning</div>
+  <h1>Backpropagation</h1>
+  <p class="subtitle">Forward pass, loss calculation, backward pass, optimiser updates, and the formal training loop.</p>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Training Cycle</h2>
+    <p>Backpropagation is the algorithm that calculates how much each weight contributed to the loss. The optimiser then uses those gradients to update the weights and biases.</p>
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-box"><div class="num">Step 1</div><div class="name">Forward pass</div><div class="desc">Input data moves through the network to produce an output.</div></div></div>
+      <div class="pipe-arrow">v</div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">Step 2</div><div class="name">Loss calculation</div><div class="desc">Compare prediction with target and compute the error.</div></div></div>
+      <div class="pipe-arrow">v</div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">Step 3</div><div class="name">Backpropagation</div><div class="desc">Propagate error backward and compute gradients using the chain rule.</div></div></div>
+      <div class="pipe-arrow">v</div>
+      <div class="pipe-step"><div class="pipe-box"><div class="num">Step 4</div><div class="name">Optimisation</div><div class="desc">Update weights and biases to reduce future loss.</div></div></div>
+    </div>
+    <div class="callout">Backpropagation finds the gradients. The optimiser applies the update. Do not treat those as the same thing.</div>
+  </div>
+
+  <div class="section">
+    <h2>Formal Algorithm</h2>
+    <div class="code">BACKPROPAGATION LEARNING
+initialise weights and biases to small random values
+while stopping condition is not met:
+  perform feedforward learning
+  compute output error and hidden-layer error
+  update output-layer weights and bias
+  update hidden-layer weights and bias
+return trained network</div>
+    <table>
+      <thead><tr><th>Stopping condition</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Error no longer changes</td><td>The network has converged or reached a plateau.</td></tr>
+        <tr><td>Error increases</td><td>Training may be overfitting or diverging.</td></tr>
+        <tr><td>Maximum epochs</td><td>A fixed training budget has been reached.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Feedforward Detail</h2>
+    <p>For a network with one hidden layer, compute hidden-node weighted sums first, activate them, then compute output-node weighted sums and activations.</p>
+    <div class="formula">n1_j = v0_j + sum(v_lj * p_l)</div>
+    <div class="formula">h_j = f(n1_j)</div>
+    <div class="formula">n2_m = w0_m + sum(w_im * h_i)</div>
+    <div class="formula">output_m = f(n2_m)</div>
+    <div class="card blue">
+      <strong>Key point</strong>
+      The output layer receives the activated hidden outputs h_i, not the raw hidden weighted sums n1_i.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Sigmoid Derivatives</h2>
+    <table>
+      <thead><tr><th>Activation</th><th>Function</th><th>Derivative</th></tr></thead>
+      <tbody>
+        <tr><td>Binary sigmoid</td><td>f(n) = 1 / (1 + e^-n)</td><td>f'(n) = f(n)(1 - f(n))</td></tr>
+        <tr><td>Bipolar sigmoid</td><td>f(n) = 2 / (1 + e^-n) - 1</td><td>f'(n) = 0.5(1 + f(n))(1 - f(n))</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">These forms are convenient because the derivative can be computed from the activation output itself.</div>
+  </div>
+
+  <div class="section">
+    <h2>Output And Hidden Error</h2>
+    <p>The exact notation varies by slide set, but the structure is stable: calculate output-layer deltas first, then use those deltas to calculate hidden-layer deltas.</p>
+    <div class="formula">output delta = (target - output) * f'(output net input)</div>
+    <div class="formula">hidden delta = f'(hidden net input) * sum(output delta * outgoing weight)</div>
+    <div class="grid2">
+      <div class="card">
+        <strong>Output layer</strong>
+        Directly compare target and output because the target values are known.
+      </div>
+      <div class="card blue">
+        <strong>Hidden layer</strong>
+        No direct target exists, so error is assigned through the weighted contribution to output errors.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Weight Update Pattern</h2>
+    <div class="formula">new weight = old weight + alpha * delta * input_to_that_weight</div>
+    <div class="formula">new bias = old bias + alpha * delta</div>
+    <table>
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>alpha</td><td>Learning rate. Controls the step size of updates.</td></tr>
+        <tr><td>delta</td><td>Error signal for the destination neuron.</td></tr>
+        <tr><td>input_to_that_weight</td><td>The activation feeding into the weight being updated.</td></tr>
+      </tbody>
+    </table>
+    <div class="card purple">
+      <strong>Learning rate effect</strong>
+      Too large can overshoot the minimum. Too small can make training very slow or stuck.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Optimisers</h2>
+    <table>
+      <thead><tr><th>Optimiser</th><th>Idea</th></tr></thead>
+      <tbody>
+        <tr><td>Gradient descent</td><td>Move weights opposite the gradient of the loss.</td></tr>
+        <tr><td>Stochastic gradient descent</td><td>Update using one training example at a time.</td></tr>
+        <tr><td>Mini-batch gradient descent</td><td>Update using a small batch of examples.</td></tr>
+        <tr><td>Momentum</td><td>Use memory of previous gradient direction.</td></tr>
+        <tr><td>Adam</td><td>Combines momentum-style behaviour with adaptive per-weight learning rates.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Batch Terminology</h2>
+    <table>
+      <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+      <tbody>
+        <tr><td>Batch size</td><td>Number of training examples used in one update iteration.</td></tr>
+        <tr><td>Batch gradient descent</td><td>Batch size equals the full training set.</td></tr>
+        <tr><td>SGD</td><td>Batch size equals 1.</td></tr>
+        <tr><td>Mini-batch</td><td>Batch size is between 1 and the full training set.</td></tr>
+        <tr><td>Epoch</td><td>One complete pass through the full training set.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="nav-hint">COS314 Final Exam Pack | Backpropagation</div>
+</div>
+
+<script src="collapsible.js"></script>
+</body>
+</html>
