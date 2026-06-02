@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #4c91c3; --accent2: #78a93a; --accent3: #c1862b; }
   .hero::before { content: '08'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -109,6 +116,12 @@
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Full KNN Walkthrough</h2>
+    <p>This walkthrough ties the KNN process together: labelled training points, the query point, choosing <code>k</code>, Euclidean distance calculations, sorting neighbours, majority voting, and the final class prediction.</p>
+    <iframe class="demo-frame" src="demos/knn_full_walkthrough.html" title="Full KNN Walkthrough" style="height: 430px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Exam Traps</h2>
     <ul>
       <li>KNN does not train a compact mathematical model; it stores examples and compares at prediction time.</li>
@@ -123,5 +136,16 @@
 </div>
 
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      var doc = this.contentDocument;
+      var demo = doc.querySelector('.knn-demo');
+      this.style.height = Math.ceil(demo ? demo.getBoundingClientRect().height : doc.body.scrollHeight) + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 </body>
 </html>

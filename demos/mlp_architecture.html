@@ -1,0 +1,191 @@
+
+<style>
+*, *::before, *::after{box-sizing:border-box}
+:root{
+  --color-border-secondary:#34344e;
+  --color-border-tertiary:#252534;
+  --color-background-primary:#0f1117;
+  --color-background-secondary:#181824;
+  --color-background-info:#1d3142;
+  --color-text-primary:#d8d8eb;
+  --color-text-secondary:#b9b9d0;
+  --color-text-tertiary:#8c8ca8;
+  --color-text-info:#9cc9ec;
+  --color-border-info:#4c91c3;
+  --border-radius-md:6px;
+  --border-radius-lg:10px;
+}
+html,body{margin:0;padding:0;background:#0f1117;color:var(--color-text-primary);font-family:"Segoe UI",Arial,sans-serif;line-height:1.45;overflow-x:hidden;overflow-y:auto}
+h2.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.lbl-btn{padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;font-size:12px;transition:all 0.15s}
+.lbl-btn.on{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.lbl-btn:hover:not(.on){background:var(--color-background-secondary)}
+.mlp-demo{padding:14px}
+@media(max-width:720px){
+  .mlp-demo{padding:12px}
+}
+</style>
+
+<h2 class="sr-only">Multilayer perceptron architecture diagram — 2 inputs, 2 hidden nodes, 1 output</h2>
+
+<div class="mlp-demo">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+  <span style="font-size:12px;color:var(--color-text-tertiary)">Highlight:</span>
+  <button class="lbl-btn on" onclick="setMode('all',this)">All</button>
+  <button class="lbl-btn" onclick="setMode('inputs',this)">Input layer</button>
+  <button class="lbl-btn" onclick="setMode('hidden',this)">Hidden layer</button>
+  <button class="lbl-btn" onclick="setMode('output',this)">Output layer</button>
+  <button class="lbl-btn" onclick="setMode('v',this)">v weights</button>
+  <button class="lbl-btn" onclick="setMode('w',this)">w weights</button>
+  <button class="lbl-btn" onclick="setMode('bias',this)">Bias nodes</button>
+</div>
+
+<canvas id="net" width="640" height="320" style="width:100%;border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary)"></canvas>
+
+<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:10px;font-size:13px;color:var(--color-text-primary);line-height:1.7" id="info-box">
+  Click a highlight button above to focus on different parts of the network.
+</div>
+</div>
+
+<script>
+var mode='all';
+var W=640,H=320;
+var dark=false;
+
+var layers={
+  input:[{x:90,y:120,label:'p\u2081',col:'#1D9E75',id:'p1'},{x:90,y:220,label:'p\u2082',col:'#1D9E75',id:'p2'}],
+  bias1:{x:180,y:300,label:'1',col:'#888780',id:'bias1'},
+  bias2:{x:370,y:300,label:'1',col:'#888780',id:'bias2'},
+  hidden:[{x:270,y:120,label:'h\u2081',col:'#534AB7',id:'h1'},{x:270,y:220,label:'h\u2082',col:'#534AB7',id:'h2'}],
+  output:[{x:460,y:170,label:'t\u2081',col:'#D85A30',id:'t1'}]
+};
+
+var edges=[
+  {from:{x:90,y:120},to:{x:270,y:120},label:'v\u2081\u2081',type:'v'},
+  {from:{x:90,y:120},to:{x:270,y:220},label:'v\u2081\u2082',type:'v'},
+  {from:{x:90,y:220},to:{x:270,y:120},label:'v\u2082\u2081',type:'v'},
+  {from:{x:90,y:220},to:{x:270,y:220},label:'v\u2082\u2082',type:'v'},
+  {from:{x:180,y:300},to:{x:270,y:120},label:'v\u2080\u2081',type:'bias'},
+  {from:{x:180,y:300},to:{x:270,y:220},label:'v\u2080\u2082',type:'bias'},
+  {from:{x:270,y:120},to:{x:460,y:170},label:'w\u2081\u2081',type:'w'},
+  {from:{x:270,y:220},to:{x:460,y:170},label:'w\u2082\u2081',type:'w'},
+  {from:{x:370,y:300},to:{x:460,y:170},label:'w\u2080\u2081',type:'bias'},
+];
+
+var infos={
+  all:'A 2-2-1 network: 2 input nodes, 2 hidden nodes, 1 output node, plus bias nodes for each layer. Data flows left to right — input \u2192 hidden \u2192 output.',
+  inputs:'The input layer simply passes your data into the network. p\u2081 and p\u2082 are your two attributes. No computation happens here.',
+  hidden:'The hidden layer is where learning happens. Each hidden node h\u2081 and h\u2082 receives ALL inputs, computes a weighted sum + bias, then applies the sigmoid activation function.',
+  output:'The output node t\u2081 receives ALL hidden node outputs, computes its own weighted sum + bias, and applies sigmoid to produce the final prediction.',
+  v:'v weights connect the input layer to the hidden layer. v\u2c7c\u2c7c notation: first subscript = source input, second = destination hidden node. v\u2080\u2c7c = bias weight for hidden node j.',
+  w:'w weights connect the hidden layer to the output layer. w\u1d62\u2096 notation: first subscript = source hidden node, second = destination output node. w\u2080\u2096 = bias weight for output node k.',
+  bias:'Bias nodes always output the value 1. They give each layer\'s neurons a learnable offset so they can fire even when all real inputs are zero. There is one bias node per layer (except output).'
+};
+
+function draw(){
+  dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  var tc=dark?'#c2c0b6':'#3d3d3a';
+  var mc=dark?'#888780':'#888780';
+  var bg=dark?'#1e1e1c':'#ffffff';
+
+  var c=document.getElementById('net');
+  var ctx=c.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  var activeEdgeTypes=[];
+  var activeNodes=[];
+  if(mode==='all'){activeEdgeTypes=['v','w','bias'];activeNodes=['p1','p2','h1','h2','t1','bias1','bias2'];}
+  else if(mode==='inputs'){activeNodes=['p1','p2'];activeEdgeTypes=[];}
+  else if(mode==='hidden'){activeNodes=['h1','h2'];activeEdgeTypes=['v','bias'];}
+  else if(mode==='output'){activeNodes=['t1'];activeEdgeTypes=['w','bias'];}
+  else if(mode==='v'){activeEdgeTypes=['v'];activeNodes=['p1','p2','h1','h2'];}
+  else if(mode==='w'){activeEdgeTypes=['w'];activeNodes=['h1','h2','t1'];}
+  else if(mode==='bias'){activeEdgeTypes=['bias'];activeNodes=['bias1','bias2','h1','h2','t1'];}
+
+  edges.forEach(function(e){
+    var active=activeEdgeTypes.indexOf(e.type)!==-1;
+    ctx.beginPath();
+    ctx.moveTo(e.from.x,e.from.y);
+    ctx.lineTo(e.to.x,e.to.y);
+    ctx.strokeStyle=e.type==='bias'?mc:(e.type==='v'?'#1D9E75':'#EF9F27');
+    ctx.lineWidth=active?1.5:0.5;
+    ctx.globalAlpha=active?0.85:0.1;
+    if(e.type==='bias'){ctx.setLineDash([3,3]);}
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha=1;
+
+    if(active){
+      var mx=(e.from.x+e.to.x)/2;
+      var my=(e.from.y+e.to.y)/2-7;
+      ctx.fillStyle=e.type==='bias'?mc:(e.type==='v'?'#1D9E75':'#EF9F27');
+      ctx.font='bold 11px sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(e.label,mx,my);
+    }
+  });
+
+  var nodeMap={};
+  [].concat(layers.input,[layers.bias1,layers.bias2],layers.hidden,layers.output).forEach(function(n){nodeMap[n.id]=n;});
+
+  Object.values(nodeMap).forEach(function(n){
+    var active=activeNodes.indexOf(n.id)!==-1;
+    var isBias=n.id==='bias1'||n.id==='bias2';
+    var r=isBias?14:22;
+
+    ctx.beginPath();
+    if(isBias){ctx.rect(n.x-r,n.y-r,r*2,r*2);}
+    else{ctx.arc(n.x,n.y,r,0,Math.PI*2);}
+    ctx.fillStyle=bg;
+    ctx.globalAlpha=active?1:0.25;
+    ctx.fill();
+    ctx.strokeStyle=n.col;
+    ctx.lineWidth=active?2:0.5;
+    ctx.stroke();
+    ctx.globalAlpha=1;
+
+    ctx.fillStyle=active?n.col:mc;
+    ctx.font=(active?'bold ':'')+'13px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(n.label,n.x,n.y+5);
+  });
+
+  ctx.fillStyle=tc;ctx.font='12px sans-serif';ctx.textAlign='center';
+  ctx.globalAlpha=0.5;
+  ctx.fillText('Input layer',90,38);
+  ctx.fillText('Hidden layer',270,38);
+  ctx.fillText('Output layer',460,38);
+  ctx.globalAlpha=1;
+
+  var arrowX=W-60;
+  ctx.fillStyle=mc;ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText('forward pass \u2192',arrowX,H/2);
+}
+
+function setMode(m,btn){
+  mode=m;
+  document.querySelectorAll('.lbl-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  document.getElementById('info-box').textContent=infos[m];
+  draw();
+}
+
+draw();
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',draw);
+function resizeHost(){
+  setTimeout(function(){
+    try{
+      var demo=document.querySelector('.mlp-demo');
+      var height=demo?demo.getBoundingClientRect().height:document.body.scrollHeight;
+      if(window.frameElement){window.frameElement.style.height=Math.ceil(height)+'px';}
+    }catch(e){}
+  },0);
+}
+var originalSetMode=setMode;
+setMode=function(m,btn){
+  originalSetMode(m,btn);
+  resizeHost();
+};
+window.addEventListener('resize',function(){draw();resizeHost();});
+resizeHost();
+</script>

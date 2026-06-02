@@ -1,0 +1,394 @@
+
+<style>
+*, *::before, *::after{box-sizing:border-box}
+:root{
+  --color-border-secondary:#34344e;
+  --color-border-tertiary:#252534;
+  --color-background-primary:#0f1117;
+  --color-background-secondary:#181824;
+  --color-background-info:#1d3142;
+  --color-background-success:#17372e;
+  --color-text-primary:#d8d8eb;
+  --color-text-secondary:#b9b9d0;
+  --color-text-tertiary:#8c8ca8;
+  --color-text-info:#9cc9ec;
+  --color-text-success:#75d6ae;
+  --color-border-info:#4c91c3;
+  --border-radius-md:6px;
+  --border-radius-lg:10px;
+}
+html,body{margin:0;padding:0;background:#0f1117;color:var(--color-text-primary);font-family:Inter,"Segoe UI",Arial,sans-serif;line-height:1.45;overflow-x:hidden;overflow-y:auto}
+h2.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.knn-demo{padding:18px}
+.knn-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.knn-toolbar .actions{margin-left:auto;display:flex;gap:8px}
+.knn-layout{display:grid;grid-template-columns:minmax(280px,1fr) minmax(260px,1fr);gap:16px;align-items:start}
+.plot-card{min-width:0}
+.plot-card canvas{display:block;width:100%;height:auto;max-height:360px;border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);background:#10121a}
+.info-stack{display:flex;flex-direction:column;gap:12px;min-width:0}
+.info-panel{background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;min-height:110px}
+.panel-kicker{font-size:12px;color:var(--color-text-tertiary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+#panel-text{font-size:14px;color:var(--color-text-primary);line-height:1.6}
+.section-label{font-size:12px;color:var(--color-text-tertiary);margin-bottom:6px;padding:0 2px}
+.step-dot{width:10px;height:10px;border-radius:50%;background:var(--color-border-secondary);transition:background 0.2s}
+.step-dot.done{background:var(--color-text-success)}
+.step-dot.active{background:var(--color-text-info)}
+.nav-btn{padding:8px 20px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;font-size:14px;transition:background 0.15s}
+.nav-btn:hover{background:var(--color-background-secondary)}
+.nav-btn:disabled{opacity:0.3;cursor:default}
+.nav-btn.primary{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.nav-btn.primary:hover{opacity:0.85}
+.dist-row{display:grid;grid-template-columns:80px 1fr 80px 70px;gap:8px;align-items:center;padding:6px 10px;border-radius:var(--border-radius-md);font-size:13px;transition:background 0.3s,opacity 0.3s}
+.dist-row.highlight{background:var(--color-background-info)}
+.dist-row.selected{background:var(--color-background-success)}
+.dist-row.faded{opacity:0.3}
+.tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.tag-a{background:#E1F5EE;color:#085041}
+.tag-b{background:#FAEEDA;color:#633806}
+.tag-q{background:#EEEDFE;color:#3C3489}
+.vote-box{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--border-radius-md);font-size:18px;font-weight:500;border:0.5px solid var(--color-border-secondary);transition:all 0.3s}
+.vote-a{background:#E1F5EE;color:#085041;border-color:#5DCAA5}
+.vote-b{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.vote-blank{background:var(--color-background-secondary);color:var(--color-text-tertiary)}
+@media(max-width:720px){
+  .knn-demo{padding:14px}
+  .knn-layout{grid-template-columns:1fr}
+  .plot-card canvas{max-height:none}
+  .knn-toolbar .actions{margin-left:0;width:100%;justify-content:flex-end}
+  .dist-row{grid-template-columns:54px minmax(120px,1fr) 58px 52px;font-size:12px}
+}
+</style>
+
+<h2 class="sr-only">KNN full walkthrough — interactive step-by-step explainer</h2>
+
+<div class="knn-demo">
+
+<div class="knn-toolbar">
+  <div style="display:flex;gap:6px;align-items:center" id="dots"></div>
+  <span style="font-size:12px;color:var(--color-text-tertiary);margin-left:4px" id="step-counter"></span>
+  <div class="actions">
+    <button class="nav-btn" id="btn-prev" onclick="go(-1)"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(1)">Next <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+  </div>
+</div>
+
+<div class="knn-layout">
+
+  <div class="plot-card">
+    <canvas id="plot" width="320" height="300"></canvas>
+  </div>
+
+  <div class="info-stack">
+    <div class="info-panel">
+      <div class="panel-kicker" id="panel-label">Step</div>
+      <div id="panel-text"></div>
+    </div>
+
+    <div id="dist-section" style="display:none">
+      <div class="section-label">Distances from Q(5,4)</div>
+      <div id="dist-rows"></div>
+    </div>
+
+    <div id="vote-section" style="display:none">
+      <div class="section-label" style="margin-bottom:8px">Majority vote (k=3)</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" id="vote-boxes"></div>
+      <div style="margin-top:10px;font-size:14px;font-weight:500;color:var(--color-text-primary)" id="vote-result"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+var training = [
+  {x:2,y:2,cls:'A',label:'P1'},
+  {x:1,y:5,cls:'A',label:'P2'},
+  {x:3,y:7,cls:'A',label:'P3'},
+  {x:7,y:3,cls:'B',label:'P4'},
+  {x:8,y:6,cls:'B',label:'P5'},
+  {x:6,y:8,cls:'B',label:'P6'},
+];
+var Q = {x:5,y:4,label:'Q'};
+var K = 3;
+
+function dist(a,b){return Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2));}
+var dists = training.map(function(p){return {p:p,d:dist(p,Q)};});
+dists.sort(function(a,b){return a.d-b.d;});
+var neighbours = dists.slice(0,K);
+var voteA = neighbours.filter(function(n){return n.p.cls==='A';}).length;
+var voteB = neighbours.filter(function(n){return n.p.cls==='B';}).length;
+var winner = voteA > voteB ? 'A' : 'B';
+
+var STEPS = [
+  {
+    label:'The training data',
+    text:'We have 6 labelled instances — 3 from Class A and 3 from Class B. These are our known examples. The goal is to classify the query point Q(5,4).',
+    plotState:'training',
+    distState:'hidden',
+    voteState:'hidden'
+  },
+  {
+    label:'The query point',
+    text:'Q(5,4) is the new unknown point. It has coordinates (attributes) but no class label yet. KNN will figure out which class it most likely belongs to.',
+    plotState:'query',
+    distState:'hidden',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 1 — choose K',
+    text:'We set K = 3. This means we will consult the 3 nearest neighbours when voting. Using an odd K avoids ties between two classes.',
+    plotState:'query',
+    distState:'hidden',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 2 — calculate all distances',
+    text:'Using the Euclidean formula: d = \u221a((x\u2081\u2212x\u2082)\u00b2 + (y\u2081\u2212y\u2082)\u00b2), we calculate the distance from Q to every training point.',
+    plotState:'distances',
+    distState:'all',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 3 — sort and pick top K',
+    text:'We sort all distances smallest to largest. The top 3 (K=3) become our neighbours. The others are discarded \u2014 they played no further role.',
+    plotState:'top3',
+    distState:'sorted',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 4 — majority vote',
+    text:'Look only at the class labels of those 3 neighbours. Count how many votes each class gets. The class with the most votes wins.',
+    plotState:'top3',
+    distState:'sorted',
+    voteState:'show'
+  },
+  {
+    label:'Result',
+    text:'Class '+winner+' wins the vote ('+Math.max(voteA,voteB)+' vs '+Math.min(voteA,voteB)+'). Q is classified as Class '+winner+'. The distances are now irrelevant \u2014 only the vote mattered.',
+    plotState:'result',
+    distState:'sorted',
+    voteState:'result'
+  }
+];
+
+STEPS = [
+  {
+    label:'The training data',
+    text:'We have 6 labelled instances - 3 from Class A and 3 from Class B. These are our known examples. The goal is to classify the query point Q(5,4).',
+    plotState:'training',
+    distState:'hidden',
+    voteState:'hidden'
+  },
+  {
+    label:'The query point',
+    text:'Q(5,4) is the new unknown point. It has coordinates (attributes) but no class label yet. KNN will figure out which class it most likely belongs to.',
+    plotState:'query',
+    distState:'hidden',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 1 - choose K',
+    text:'We set K = 3. This means we will consult the 3 nearest neighbours when voting. Using an odd K avoids ties between two classes.',
+    plotState:'query',
+    distState:'hidden',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 2 - calculate all distances',
+    text:'Using the Euclidean formula, calculate the distance from Q to every training point.',
+    plotState:'distances',
+    distState:'all',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 3 - sort and pick top K',
+    text:'We sort all distances smallest to largest. The top 3 (K=3) become our neighbours. The others are discarded - they play no further role.',
+    plotState:'top3',
+    distState:'sorted',
+    voteState:'hidden'
+  },
+  {
+    label:'Step 4 - majority vote',
+    text:'Look only at the class labels of those 3 neighbours. Count how many votes each class gets. The class with the most votes wins.',
+    plotState:'top3',
+    distState:'sorted',
+    voteState:'show'
+  },
+  {
+    label:'Result',
+    text:'Class '+winner+' wins the vote ('+Math.max(voteA,voteB)+' vs '+Math.min(voteA,voteB)+'). Q is classified as Class '+winner+'. The distances are now irrelevant - only the vote mattered.',
+    plotState:'result',
+    distState:'sorted',
+    voteState:'result'
+  }
+];
+
+var current = 0;
+
+var COLORS = {A:'#1D9E75', B:'#EF9F27', Q:'#534AB7', line:'#AFA9EC', dim:'#B4B2A9'};
+
+function toCanvas(val, min, max, size, pad){
+  return pad + (val - min) / (max - min) * (size - 2*pad);
+}
+
+function drawPlot(state){
+  var canvas = document.getElementById('plot');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  var pad = 36, xmin=0, xmax=10, ymin=0, ymax=10;
+  function cx(v){return toCanvas(v,xmin,xmax,W,pad);}
+  function cy(v){return H - toCanvas(v,ymin,ymax,H,pad);}
+
+  ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--color-border-tertiary') || 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = 0.5;
+  for(var gx=0;gx<=10;gx+=2){
+    ctx.beginPath();ctx.moveTo(cx(gx),cy(0));ctx.lineTo(cx(gx),cy(10));ctx.stroke();
+    ctx.fillStyle='rgba(128,128,128,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';
+    ctx.fillText(gx,cx(gx),H-8);
+  }
+  for(var gy=0;gy<=10;gy+=2){
+    ctx.beginPath();ctx.moveTo(cx(0),cy(gy));ctx.lineTo(cx(10),cy(gy));ctx.stroke();
+    if(gy>0){ctx.fillStyle='rgba(128,128,128,0.5)';ctx.font='10px sans-serif';ctx.textAlign='right';ctx.fillText(gy,pad-4,cy(gy)+4);}
+  }
+
+  var topNeighbourLabels = neighbours.map(function(n){return n.p.label;});
+
+  if(state==='distances' || state==='top3'){
+    training.forEach(function(p){
+      var isTop = topNeighbourLabels.indexOf(p.label) !== -1;
+      if(state==='distances' || isTop){
+        ctx.beginPath();
+        ctx.moveTo(cx(Q.x),cy(Q.y));
+        ctx.lineTo(cx(p.x),cy(p.y));
+        ctx.strokeStyle = isTop && state==='top3' ? (p.cls==='A'?COLORS.A:COLORS.B) : COLORS.line;
+        ctx.lineWidth = isTop && state==='top3' ? 2 : 1;
+        ctx.setLineDash(isTop && state==='top3' ? [] : [4,3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+  }
+
+  training.forEach(function(p){
+    var isTop = topNeighbourLabels.indexOf(p.label) !== -1;
+    var dim = (state==='top3'||state==='result') && !isTop;
+    var color = p.cls==='A' ? COLORS.A : COLORS.B;
+    ctx.beginPath();
+    ctx.arc(cx(p.x),cy(p.y),8,0,Math.PI*2);
+    ctx.fillStyle = dim ? COLORS.dim : color;
+    ctx.globalAlpha = dim ? 0.3 : 1;
+    ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.strokeStyle='white';ctx.lineWidth=1.5;ctx.stroke();
+
+    ctx.fillStyle = dim ? 'rgba(128,128,128,0.4)' : color;
+    ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText(p.label+' ('+p.cls+')', cx(p.x), cy(p.y)-13);
+  });
+
+  if(state!=='training'){
+    var qcolor = state==='result' ? (winner==='A'?COLORS.A:COLORS.B) : COLORS.Q;
+    ctx.beginPath();ctx.arc(cx(Q.x),cy(Q.y),10,0,Math.PI*2);
+    ctx.fillStyle='transparent';ctx.strokeStyle=qcolor;ctx.lineWidth=2.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx(Q.x),cy(Q.y),4,0,Math.PI*2);
+    ctx.fillStyle=qcolor;ctx.fill();
+    ctx.fillStyle=qcolor;ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Q'+(state==='result'?' = '+winner:''), cx(Q.x), cy(Q.y)-15);
+  }
+}
+
+function renderDists(state){
+  var sec = document.getElementById('dist-section');
+  var rows = document.getElementById('dist-rows');
+  if(state==='hidden'){sec.style.display='none';return;}
+  sec.style.display='block';
+  var topLabels = neighbours.map(function(n){return n.p.label;});
+  var html = '';
+  var sorted = state==='sorted' ? dists : dists.slice().sort(function(a,b){return training.indexOf(a.p)-training.indexOf(b.p);});
+  sorted.forEach(function(item,i){
+    var isTop = topLabels.indexOf(item.p.label)!==-1;
+    var cls = state==='sorted' ? (isTop ? 'selected' : 'faded') : '';
+    var formula = '\u221a(('+(Q.x)+'\u2212'+item.p.x+')\u00b2+('+(Q.y)+'\u2212'+item.p.y+')\u00b2)';
+    html += '<div class="dist-row '+cls+'">';
+    html += '<span style="font-weight:500;font-size:13px;color:var(--color-text-primary)">'+item.p.label+'</span>';
+    html += '<span style="font-size:11px;color:var(--color-text-tertiary)">'+formula+'</span>';
+    html += '<span style="font-weight:500;color:var(--color-text-primary)">'+item.d.toFixed(2)+'</span>';
+    html += '<span class="tag tag-'+(item.p.cls==='A'?'a':'b')+'">'+item.p.cls+'</span>';
+    html += '</div>';
+  });
+  rows.innerHTML = html;
+}
+
+function renderVote(state){
+  var sec = document.getElementById('vote-section');
+  var boxes = document.getElementById('vote-boxes');
+  var result = document.getElementById('vote-result');
+  if(state==='hidden'){sec.style.display='none';return;}
+  sec.style.display='block';
+  var html = '';
+  neighbours.forEach(function(n){
+    html += '<div class="vote-box vote-'+(n.p.cls==='A'?'a':'b')+'">'+n.p.cls+'</div>';
+    html += '<span style="color:var(--color-text-tertiary);font-size:18px">';
+    html += (neighbours.indexOf(n)<neighbours.length-1?'+':'');
+    html += '</span>';
+  });
+  boxes.innerHTML = html;
+  if(state==='result'){
+    result.innerHTML = 'A: '+voteA+' vote'+(voteA!==1?'s':'')+'&nbsp;&nbsp;|&nbsp;&nbsp;B: '+voteB+' vote'+(voteB!==1?'s':'')+'&nbsp;&nbsp;\u2192&nbsp;&nbsp;<span style="color:'+(winner==='A'?COLORS.A:COLORS.B)+'">Class '+winner+' wins</span>';
+  } else {
+    result.innerHTML = '';
+  }
+}
+
+function renderDots(){
+  var html='';
+  for(var i=0;i<STEPS.length;i++){
+    var cls = i<current?'done':i===current?'active':'';
+    html += '<div class="step-dot '+cls+'"></div>';
+  }
+  document.getElementById('dots').innerHTML=html;
+  document.getElementById('step-counter').textContent=(current+1)+' / '+STEPS.length;
+}
+
+function render(){
+  var s = STEPS[current];
+  document.getElementById('panel-label').textContent = s.label;
+  document.getElementById('panel-text').textContent = s.text;
+  drawPlot(s.plotState);
+  renderDists(s.distState);
+  renderVote(s.voteState);
+  renderDots();
+  document.getElementById('btn-prev').disabled = current===0;
+  document.getElementById('btn-next').disabled = current===STEPS.length-1;
+  document.getElementById('btn-next').textContent = current===STEPS.length-2 ? 'See result ' : 'Next ';
+  document.getElementById('btn-next').innerHTML = current===STEPS.length-2
+    ? 'See result <i class="ti ti-arrow-right" aria-hidden="true"></i>'
+    : 'Next <i class="ti ti-arrow-right" aria-hidden="true"></i>';
+  resizeHost();
+}
+
+function go(dir){
+  current = Math.max(0, Math.min(STEPS.length-1, current+dir));
+  render();
+}
+
+function resizeHost(){
+  setTimeout(function(){
+    try {
+      var demo = document.querySelector('.knn-demo');
+      var height = demo ? demo.getBoundingClientRect().height : document.body.scrollHeight;
+      if (window.frameElement) {
+        window.frameElement.style.height = Math.ceil(height) + 'px';
+      }
+    } catch (e) {}
+  }, 0);
+}
+
+window.addEventListener('resize', function(){
+  drawPlot(STEPS[current].plotState);
+  resizeHost();
+});
+
+render();
+</script>

@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #78a93a; --accent2: #4c91c3; --accent3: #c1862b; }
   .hero::before { content: '09'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0f1117;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -80,6 +87,12 @@ repeat until convergence:
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Perceptron Input Updates</h2>
+    <p>This walkthrough lets you change the inputs, target, initial weights, bias, learning rate, and threshold, then watch the net input, output, error, and weight updates across epochs.</p>
+    <iframe class="demo-frame" src="demos/perceptron_inputs.html" title="Perceptron Input Updates Walkthrough" style="height: 520px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>MLP Architecture</h2>
     <p>A multilayer perceptron has an input layer, one or more hidden layers, and an output layer. Hidden layers let the network learn non-linear mappings.</p>
     <div class="ascii">Input layer       Hidden layer        Output layer
@@ -98,6 +111,12 @@ p1  p2  p3   ->   h1  h2  ...   ->   output nodes</div>
       <strong>Model scaling</strong>
       Modern deep models usually scale both depth and width. Making a model deeper without enough width can create information bottlenecks.
     </div>
+  </div>
+
+  <div class="section">
+    <h2>Interactive Demo: MLP Architecture</h2>
+    <p>This diagram lets you highlight the input layer, hidden layer, output layer, bias nodes, and the <code>v</code> and <code>w</code> weight sets so the standard 2-2-1 network notation is easier to read.</p>
+    <iframe class="demo-frame" src="demos/mlp_architecture.html" title="MLP Architecture Diagram" style="height: 440px"></iframe>
   </div>
 
   <div class="section">
@@ -173,5 +192,16 @@ p1  p2  p3   ->   h1  h2  ...   ->   output nodes</div>
 </div>
 
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      var doc = this.contentDocument;
+      var demo = doc.querySelector('.perceptron-demo, .knn-demo, .mlp-demo');
+      this.style.height = Math.ceil(demo ? demo.getBoundingClientRect().height : doc.body.scrollHeight) + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 </body>
 </html>
