@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hopfield Network Visual Stepper</title>
+<style>
+:root{
+  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --border-radius-md:4px;
+  --border-radius-lg:6px;
+  --color-background-primary:#1c1c28;
+  --color-background-secondary:#181824;
+  --color-background-success:rgba(120,169,58,.14);
+  --color-background-danger:rgba(176,88,72,.15);
+  --color-background-warning:rgba(193,134,43,.16);
+  --color-background-info:rgba(76,145,195,.16);
+  --color-border-secondary:#34344e;
+  --color-border-tertiary:#34344e;
+  --color-border-success:#78a93a;
+  --color-border-danger:#b05848;
+  --color-border-warning:#c1862b;
+  --color-text-primary:#c4c4d8;
+  --color-text-secondary:#9696b2;
+  --color-text-tertiary:#787896;
+  --color-text-success:#9bc75f;
+  --color-text-danger:#d27a68;
+  --color-text-warning:#d3a24c;
+  --color-text-info:#79b5df;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-width:0;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);line-height:1.6}
+.hopfield-demo{padding:18px;overflow:hidden}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.stepper-dots{display:flex;gap:6px;justify-content:center;margin-bottom:1.5rem}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--color-border-secondary);transition:background .2s}
+.dot.active{background:var(--color-text-primary)}
+.panel{display:none}.panel.active{display:block}
+.bit-row{display:flex;gap:8px;align-items:center;justify-content:center;margin:1rem 0}
+.bit{width:52px;height:52px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-secondary);transition:all .3s}
+.bit.on{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.bit.off{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.bit.wrong{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.bit.active-node{outline:2px solid var(--color-text-warning);outline-offset:2px}
+.bit.changed{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.label-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:4px}
+.bit-label{width:52px;text-align:center;font-size:11px;color:var(--color-text-secondary)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.card h3{font-size:14px;font-weight:500;margin:0 0 6px}
+.card p{font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.6}
+.math-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-family:var(--font-mono);font-size:13px;margin:.75rem 0;line-height:1.8;color:var(--color-text-primary)}
+.highlight-val{color:var(--color-text-success);font-weight:500}
+.highlight-neg{color:var(--color-text-danger);font-weight:500}
+.highlight-active{color:var(--color-text-warning);font-weight:500}
+.nav-row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:1rem}
+.nav-btn{padding:8px 20px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:13px;cursor:pointer;color:var(--color-text-primary);transition:all .15s}
+.nav-btn:hover{background:var(--color-background-secondary)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.step-counter{font-size:12px;color:var(--color-text-secondary)}
+.matrix-wrap{overflow-x:auto;margin:.75rem 0}
+.matrix-table{border-collapse:collapse;margin:0 auto;font-family:var(--font-mono);font-size:13px}
+.matrix-table td{width:44px;height:36px;text-align:center;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+.matrix-table td.pos{color:var(--color-text-success);background:var(--color-background-success)}
+.matrix-table td.neg{color:var(--color-text-danger);background:var(--color-background-danger)}
+.matrix-table td.zero{color:var(--color-text-tertiary)}
+.matrix-table td.col-hi{outline:2px solid var(--color-text-warning);outline-offset:-2px;font-weight:500}
+.matrix-table th{width:44px;height:28px;text-align:center;font-size:11px;font-weight:400;color:var(--color-text-secondary);border:none}
+.info-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-info);color:var(--color-text-info);margin-right:4px}
+.warn-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-warning);color:var(--color-text-warning)}
+.success-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-success);color:var(--color-text-success)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.net-svg-wrap{display:flex;justify-content:center;margin:1rem 0}
+@media(max-width:640px){
+  .hopfield-demo{padding:12px}
+  .two-col{grid-template-columns:1fr}
+  .bit-row,.label-row{gap:6px}
+  .bit{width:42px;height:42px;font-size:17px}
+  .bit-label{width:42px}
+  .nav-row{align-items:stretch}
+  .nav-btn{padding:8px 12px}
+  .matrix-table{font-size:12px}
+  .matrix-table td{width:38px;height:32px}
+  .matrix-table th{width:38px}
+}
+</style>
+</head>
+<body>
+
+<main class="hopfield-demo">
+<h2 class="sr-only">Interactive Hopfield network visualiser stepping through the [1 1 1 0] training and [0 0 1 0] recall example</h2>
+
+<div class="stepper-dots" id="dots"></div>
+<div id="panels"></div>
+</main>
+
+<script>
+const W = [
+  [ 0, 1, 1,-1],
+  [ 1, 0, 1,-1],
+  [ 1, 1, 0,-1],
+  [-1,-1,-1, 0]
+];
+
+const PANELS = [
+  {
+    title: "What is a Hopfield network?",
+    render: () => `
+      <div class="card">
+        <h3>The memory analogy</h3>
+        <p>Imagine a grid of light-switches — each one is either on (1) or off (0). A Hopfield network <em>memorises</em> a pattern of those switches. Later, if you show it a broken version of that pattern, it figures out what the original was.</p>
+      </div>
+      <div class="net-svg-wrap">${networkSVG([1,1,1,0], null, null)}</div>
+      <div class="card">
+        <h3>This example</h3>
+        <p>We will train the network on the pattern <span style="font-family:var(--font-mono);font-weight:500">[1 1 1 0]</span>, then give it the corrupted input <span style="font-family:var(--font-mono);font-weight:500">[0 0 1 0]</span> and watch it recover the original — step by step.</p>
+      </div>
+      <div class="two-col">
+        <div class="card"><h3>Stored pattern</h3>${bitRow([1,1,1,0])}</div>
+        <div class="card"><h3>Noisy input</h3>${bitRow([0,0,1,0], [0,1,2])}</div>
+      </div>
+    `
+  },
+  {
+    title: "Step 1 — training: build the weight matrix",
+    render: () => `
+      <div class="card">
+        <h3>Binary data → bipolar transform</h3>
+        <p>Because the data is binary (0s and 1s), we first convert each bit: <span style="font-family:var(--font-mono)">2p − 1</span>. This turns 0 → −1 and 1 → 1, giving us bipolar values we can take an outer product with.</p>
+        <div class="math-block">
+          Pattern: [1, 1, 1, 0]<br>
+          Transform: [2(1)−1, 2(1)−1, 2(1)−1, 2(0)−1]<br>
+          Bipolar: [<span class="highlight-val">1, 1, 1,</span> <span class="highlight-neg">−1</span>]
+        </div>
+      </div>
+      <div class="card">
+        <h3>Outer product → zero the diagonal</h3>
+        <p>Multiply the vector by itself transposed (outer product). Then set every diagonal value to 0 — neurons don't connect to themselves.</p>
+        ${matrixHTML(W, null)}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:6px">Green = positive (positions agree). Red = negative (positions disagree — node 4 was 0, the others were 1).</p>
+      </div>
+    `
+  },
+  {
+    title: "Step 2 — initialise recall",
+    render: () => `
+      <div class="card">
+        <h3>Set y = noisy input</h3>
+        <p>We start by setting the output vector <span style="font-family:var(--font-mono)">y</span> equal to the noisy input. This is the damaged pattern we want to repair. The threshold θ = 0 for all nodes.</p>
+      </div>
+      <div class="card">
+        <h3>State at start</h3>
+        <div class="label-row">${['y₁','y₂','y₃','y₄'].map(l=>`<div class="bit-label">${l}</div>`).join('')}</div>
+        ${bitRow([0,0,1,0],[0,1])}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">Nodes 1 and 2 are <span style="color:var(--color-text-danger)">wrong</span> (should be 1). Node 3 is already correct. Node 4 is correct (should be 0).</p>
+      </div>
+      <div class="card">
+        <h3>What happens next</h3>
+        <p>We pick one node at a time (the order is random in the real algorithm — here we go 1→2→4→3 for clarity). For each node, we compute a score <span style="font-family:var(--font-mono)">s</span> using the weight matrix, then decide whether to flip it to 1 or 0.</p>
+        <div class="math-block">s<sub>i</sub> = p<sub>i</sub> + y · (column i of W)</div>
+        <p style="font-size:12px;color:var(--color-text-secondary)">If s &gt; 0 → y<sub>i</sub> = 1. If s &lt; 0 → y<sub>i</sub> = 0. If s = 0 → unchanged.</p>
+      </div>
+    `
+  },
+  {
+    title: "Step 3 — update y₁",
+    render: () => `
+      <div class="card">
+        <h3>Which column do we use?</h3>
+        <p>We are updating node 1, so we need <span style="font-family:var(--font-mono)">column 1</span> of the weight matrix. This tells us how every other node influences node 1.</p>
+        ${matrixHTML(W, 0)}
+      </div>
+      <div class="card">
+        <h3>Compute s₁</h3>
+        <div class="math-block">
+          s₁ = p₁ + y · col 1<br>
+          s₁ = <span class="highlight-active">0</span> + (0×<span class="highlight-active">0</span> + 0×<span class="highlight-active">1</span> + 1×<span class="highlight-active">1</span> + 0×<span class="highlight-active">−1</span>)<br>
+          s₁ = 0 + (0 + 0 + 1 + 0)<br>
+          s₁ = <span class="highlight-val">1</span>
+        </div>
+        <p>s₁ = 1 &gt; θ = 0 → <strong>y₁ = 1</strong> <span class="success-tag">flipped to 1</span></p>
+      </div>
+      <div class="card">
+        <h3>State after updating y₁</h3>
+        <div class="label-row">${['y₁','y₂','y₃','y₄'].map(l=>`<div class="bit-label">${l}</div>`).join('')}</div>
+        ${bitRowWithChange([0,0,1,0],[1,0,1,0],[0])}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">y₁ flipped from 0 → 1. Now update p = y.</p>
+      </div>
+    `
+  },
+  {
+    title: "Step 4 — update y₄",
+    render: () => `
+      <div class="card">
+        <h3>Column 4 of W</h3>
+        <p>Now we update node 4 using <span style="font-family:var(--font-mono)">column 4</span>. Note that p has been updated: p = [1, 0, 1, 0].</p>
+        ${matrixHTML(W, 3)}
+      </div>
+      <div class="card">
+        <h3>Compute s₄</h3>
+        <div class="math-block">
+          s₄ = p₄ + y · col 4<br>
+          s₄ = <span class="highlight-active">0</span> + (1×<span class="highlight-active">−1</span> + 0×<span class="highlight-active">−1</span> + 1×<span class="highlight-active">−1</span> + 0×<span class="highlight-active">0</span>)<br>
+          s₄ = 0 + (−1 + 0 + −1 + 0)<br>
+          s₄ = <span class="highlight-neg">−2</span>
+        </div>
+        <p>s₄ = −2 &lt; θ = 0 → <strong>y₄ stays 0</strong> <span class="info-tag">no change</span></p>
+      </div>
+      <div class="card">
+        <h3>State after updating y₄</h3>
+        <div class="label-row">${['y₁','y₂','y₃','y₄'].map(l=>`<div class="bit-label">${l}</div>`).join('')}</div>
+        ${bitRow([1,0,1,0],[1])}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">No change. y₄ = 0, which is already correct.</p>
+      </div>
+    `
+  },
+  {
+    title: "Step 5 — update y₂",
+    render: () => `
+      <div class="card">
+        <h3>Column 2 of W</h3>
+        <p>Now update node 2. p = [1, 0, 1, 0].</p>
+        ${matrixHTML(W, 1)}
+      </div>
+      <div class="card">
+        <h3>Compute s₂</h3>
+        <div class="math-block">
+          s₂ = p₂ + y · col 2<br>
+          s₂ = <span class="highlight-active">0</span> + (1×<span class="highlight-active">1</span> + 0×<span class="highlight-active">0</span> + 1×<span class="highlight-active">1</span> + 0×<span class="highlight-active">−1</span>)<br>
+          s₂ = 0 + (1 + 0 + 1 + 0)<br>
+          s₂ = <span class="highlight-val">2</span>
+        </div>
+        <p>s₂ = 2 &gt; θ = 0 → <strong>y₂ = 1</strong> <span class="success-tag">flipped to 1</span></p>
+      </div>
+      <div class="card">
+        <h3>State after updating y₂</h3>
+        <div class="label-row">${['y₁','y₂','y₃','y₄'].map(l=>`<div class="bit-label">${l}</div>`).join('')}</div>
+        ${bitRowWithChange([1,0,1,0],[1,1,1,0],[1])}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">y₂ flipped from 0 → 1. Update p = [1, 1, 1, 0].</p>
+      </div>
+    `
+  },
+  {
+    title: "Step 6 — update y₃",
+    render: () => `
+      <div class="card">
+        <h3>Column 3 of W</h3>
+        <p>Last node. p = [1, 1, 1, 0].</p>
+        ${matrixHTML(W, 2)}
+      </div>
+      <div class="card">
+        <h3>Compute s₃</h3>
+        <div class="math-block">
+          s₃ = p₃ + y · col 3<br>
+          s₃ = <span class="highlight-active">1</span> + (1×<span class="highlight-active">1</span> + 1×<span class="highlight-active">1</span> + 1×<span class="highlight-active">0</span> + 0×<span class="highlight-active">−1</span>)<br>
+          s₃ = 1 + (1 + 1 + 0 + 0)<br>
+          s₃ = <span class="highlight-val">3</span>
+        </div>
+        <p>s₃ = 3 &gt; θ = 0 → <strong>y₃ = 1</strong> <span class="info-tag">already 1, no change</span></p>
+      </div>
+      <div class="card">
+        <h3>State after updating y₃</h3>
+        <div class="label-row">${['y₁','y₂','y₃','y₄'].map(l=>`<div class="bit-label">${l}</div>`).join('')}</div>
+        ${bitRow([1,1,1,0])}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">No change needed. y₃ was already 1.</p>
+      </div>
+    `
+  },
+  {
+    title: "Step 7 — convergence check",
+    render: () => `
+      <div class="card">
+        <h3>End of epoch 1</h3>
+        <p>All four nodes have been updated. We compare the current state of y to what it was at the start of this epoch.</p>
+        <div class="two-col" style="margin-top:8px">
+          <div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Start of epoch</div>
+            ${bitRow([0,0,1,0],[0,1])}
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">End of epoch</div>
+            ${bitRow([1,1,1,0])}
+          </div>
+        </div>
+        <p style="margin-top:8px">Nodes 1 and 2 changed. Not yet converged — we run a second epoch to confirm.</p>
+      </div>
+      <div class="card">
+        <h3>Epoch 2 — no changes</h3>
+        <p>Running all four updates again with y = [1,1,1,0] produces the same values. Every s score either stays positive (→ stays 1) or stays negative (→ stays 0). No node changes. The algorithm terminates.</p>
+        <div class="math-block">
+          s₁ = 1 + (1+1+0) = 3 &gt; 0 → stays 1<br>
+          s₂ = 1 + (1+1+0) = 3 &gt; 0 → stays 1<br>
+          s₃ = 1 + (1+1+0) = 3 &gt; 0 → stays 1<br>
+          s₄ = 0 + (−1−1−1) = −3 &lt; 0 → stays 0
+        </div>
+        <p><span class="success-tag">Converged</span> y = [1, 1, 1, 0] — the stored pattern is fully recovered.</p>
+      </div>
+    `
+  },
+  {
+    title: "Summary — what just happened",
+    render: () => `
+      <div class="net-svg-wrap">${networkSVG([1,1,1,0], null, null)}</div>
+      <div class="card">
+        <h3>The full journey</h3>
+        <div class="math-block">
+          Input (noisy):   [<span class="highlight-neg">0</span>, <span class="highlight-neg">0</span>, 1, 0]<br>
+          After epoch 1:   [<span class="highlight-val">1</span>, <span class="highlight-val">1</span>, 1, 0]<br>
+          After epoch 2:   [1, 1, 1, 0]  ← no change → converged<br>
+          Stored pattern:  [1, 1, 1, 0]  ✓
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Why node 1 flipped to 1</h3>
+          <p>The weights from nodes 3 (w₃₁ = 1) pulled node 1 upward. Node 3 was already correct and its positive weight reinforced node 1 toward the stored value.</p>
+        </div>
+        <div class="card">
+          <h3>Why node 4 stayed 0</h3>
+          <p>Nodes 1 and 3 both had weight −1 toward node 4, giving s₄ = −2. The network knew node 4 should be 0 because the pattern encodes that disagreement.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>The key formula to remember for exams</h3>
+        <div class="math-block">s<sub>i</sub> = p<sub>i</sub> + y · (column i of W)</div>
+        <p>Not row i — <strong>column i</strong>. That's the most common mistake in exam answers. Also: after each update, you update p to equal y before moving to the next node.</p>
+      </div>
+    `
+  }
+];
+
+function bitRow(vals, wrongIdx=[]) {
+  return `<div class="bit-row">${vals.map((v,i)=>`<div class="bit ${v===1?'on':'off'}${wrongIdx.includes(i)?' wrong':''}">${v}</div>`).join('')}</div>`;
+}
+
+function bitRowWithChange(before, after, changedIdx) {
+  return `<div class="bit-row">${after.map((v,i)=>{
+    const cls = changedIdx.includes(i) ? 'changed' : (v===1?'on':'off');
+    return `<div class="bit ${cls}">${v}</div>`;
+  }).join('')}</div>`;
+}
+
+function matrixHTML(W, highlightCol) {
+  const labels = ['w₁','w₂','w₃','w₄'];
+  let html = `<div class="matrix-wrap"><table class="matrix-table"><tr><th></th>${labels.map((l,j)=>`<th${highlightCol===j?' style="color:var(--color-text-warning);font-weight:500"':''}>col ${j+1}</th>`).join('')}</tr>`;
+  for(let i=0;i<4;i++){
+    html+=`<tr><th>${labels[i]}</th>`;
+    for(let j=0;j<4;j++){
+      const v=W[i][j];
+      const cls = v===0?'zero':v>0?'pos':'neg';
+      const colhi = highlightCol===j?' col-hi':'';
+      html+=`<td class="${cls}${colhi}">${v}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</table></div>';
+  return html;
+}
+
+function networkSVG(state, activeNode, highlight) {
+  const cx=[160,300,440,580], cy=90;
+  const colors=['#1D9E75','#1D9E75','#1D9E75','#888780'];
+  const nodeR=28;
+  let svg=`<svg width="100%" viewBox="0 0 680 180" style="max-width:600px"><title>Hopfield network nodes</title><desc>4 fully connected nodes showing the stored pattern 1 1 1 0</desc>`;
+  for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){
+    const wij=W[i][j];
+    const col=wij>0?'#1D9E75':'#D85A30';
+    const op=Math.abs(wij)*0.5+0.15;
+    svg+=`<line x1="${cx[i]}" y1="${cy}" x2="${cx[j]}" y2="${cy}" stroke="${col}" stroke-width="${Math.abs(wij)*1.5+0.5}" opacity="${op}" stroke-dasharray="${wij<0?'4 3':''}"/>`;
+  }
+  for(let i=0;i<4;i++){
+    const v=state[i];
+    const col=v===1?'#1D9E75':'#888780';
+    const bg=v===1?'#E1F5EE':'#F1EFE8';
+    svg+=`<circle cx="${cx[i]}" cy="${cy}" r="${nodeR}" fill="${bg}" stroke="${col}" stroke-width="1.5"/>`;
+    svg+=`<text x="${cx[i]}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="500" fill="${col}" font-family="var(--font-mono)">${v}</text>`;
+    svg+=`<text x="${cx[i]}" y="${cy+nodeR+16}" text-anchor="middle" font-size="12" fill="var(--color-text-secondary)" font-family="var(--font-sans)">y${i+1}</text>`;
+  }
+  svg+=`<text x="340" y="160" text-anchor="middle" font-size="11" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">Green lines = positive weights. Red dashed = negative weights.</text>`;
+  svg+=`</svg>`;
+  return svg;
+}
+
+let current = 0;
+
+function resizeHostFrame() {
+  if (!window.frameElement) return;
+  requestAnimationFrame(() => {
+    const demo = document.querySelector('.hopfield-demo');
+    const height = Math.ceil(demo ? demo.getBoundingClientRect().height : document.body.scrollHeight);
+    window.frameElement.style.height = `${height}px`;
+  });
+}
+
+function buildDots() {
+  const d = document.getElementById('dots');
+  d.innerHTML = PANELS.map((_,i)=>`<div class="dot${i===0?' active':''}" id="dot-${i}"></div>`).join('');
+}
+
+function buildPanel(idx) {
+  const p = document.getElementById('panels');
+  const title = `<div style="font-size:16px;font-weight:500;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--color-border-tertiary)">${PANELS[idx].title}</div>`;
+  const nav = `<div class="nav-row">
+    <button class="nav-btn" onclick="go(${idx-1})" ${idx===0?'disabled':''}>← Previous</button>
+    <span class="step-counter">${idx+1} / ${PANELS.length}</span>
+    <button class="nav-btn" onclick="go(${idx+1})" ${idx===PANELS.length-1?'disabled':''}>Next →</button>
+  </div>`;
+  p.innerHTML = `<div class="panel active">${title}${PANELS[idx].render()}${nav}</div>`;
+  resizeHostFrame();
+}
+
+function go(idx) {
+  if(idx<0||idx>=PANELS.length) return;
+  current=idx;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  buildPanel(idx);
+}
+
+buildDots();
+buildPanel(0);
+window.addEventListener('load', resizeHostFrame);
+</script>
+</body>
+</html>

@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #c1862b; --accent2: #4c91c3; --accent3: #78a93a; }
   .hero::before { content: '10'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #1c1c28;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -120,6 +127,12 @@ return trained network</div>
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Backpropagation Stepper</h2>
+    <p>This walkthrough combines the forward pass, output error, hidden-layer deltas, and weight updates into one worked example.</p>
+    <iframe class="demo-frame" src="demos/backpropagation_stepper.html" title="Backpropagation Stepper" style="height: 1080px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Optimisers</h2>
     <table>
       <thead><tr><th>Optimiser</th><th>Idea</th></tr></thead>
@@ -151,5 +164,16 @@ return trained network</div>
 </div>
 
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      var doc = this.contentDocument;
+      var demo = doc.querySelector('.backprop-demo');
+      this.style.height = Math.ceil(demo ? demo.getBoundingClientRect().height : doc.body.scrollHeight) + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 </body>
 </html>

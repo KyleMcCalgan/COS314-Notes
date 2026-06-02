@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #b05848; --accent2: #4c91c3; --accent3: #78a93a; }
   .hero::before { content: '11'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #1c1c28;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -125,6 +132,12 @@ W = [ 0 -1  1]
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: Hopfield Visual Stepper</h2>
+    <p>This walkthrough shows the same recall idea with a four-node network. Step through training, noisy-input recall, node updates, and the convergence check.</p>
+    <iframe class="demo-frame" src="demos/hopfield_network_visual_stepper.html" title="Hopfield Network Visual Stepper" style="height: 980px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Applications</h2>
     <ul>
       <li>Pattern completion from missing components.</li>
@@ -138,5 +151,16 @@ W = [ 0 -1  1]
 </div>
 
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      var doc = this.contentDocument;
+      var demo = doc.querySelector('.hopfield-demo');
+      this.style.height = Math.ceil(demo ? demo.getBoundingClientRect().height : doc.body.scrollHeight) + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 </body>
 </html>

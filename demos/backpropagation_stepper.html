@@ -1,0 +1,490 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backpropagation Stepper</title>
+<style>
+:root{
+  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --border-radius-md:4px;
+  --border-radius-lg:6px;
+  --color-background-primary:#1c1c28;
+  --color-background-secondary:#181824;
+  --color-background-success:rgba(120,169,58,.14);
+  --color-background-danger:rgba(176,88,72,.15);
+  --color-background-warning:rgba(193,134,43,.16);
+  --color-background-info:rgba(76,145,195,.16);
+  --color-border-secondary:#34344e;
+  --color-border-tertiary:#34344e;
+  --color-text-primary:#c4c4d8;
+  --color-text-secondary:#9696b2;
+  --color-text-tertiary:#787896;
+  --color-text-success:#9bc75f;
+  --color-text-danger:#d27a68;
+  --color-text-warning:#d3a24c;
+  --color-text-info:#79b5df;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-width:0;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);line-height:1.6}
+.backprop-demo{padding:18px;overflow:hidden}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--color-border-secondary);transition:background .2s}
+.dot.active{background:var(--color-text-primary)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.card h3{font-size:14px;font-weight:500;margin:0 0 8px}
+.card p{font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.6}
+.math-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-family:var(--font-mono);font-size:12px;margin:.75rem 0;line-height:2.1;color:var(--color-text-primary)}
+.hv{color:var(--color-text-success);font-weight:500}
+.hn{color:var(--color-text-danger);font-weight:500}
+.hw{color:var(--color-text-warning);font-weight:500}
+.hi{color:var(--color-text-info);font-weight:500}
+.nav-row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:1rem}
+.nav-btn{padding:8px 20px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:13px;cursor:pointer;color:var(--color-text-primary);transition:all .15s}
+.nav-btn:hover{background:var(--color-background-secondary)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.step-counter{font-size:12px;color:var(--color-text-secondary)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.tag-ok{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-success);color:var(--color-text-success)}
+.tag-info{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-info);color:var(--color-text-info)}
+.tag-warn{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-warning);color:var(--color-text-warning)}
+.tag-purple{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:#EEEDFE;color:#3C3489}
+.weight-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.weight-row:last-child{border-bottom:none}
+.weight-old{font-family:var(--font-mono);color:var(--color-text-secondary)}
+.weight-delta{font-family:var(--font-mono);color:var(--color-text-warning)}
+.weight-new{font-family:var(--font-mono);color:var(--color-text-success);font-weight:500}
+@media(max-width:720px){
+  .backprop-demo{padding:12px}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .card{padding:.875rem 1rem;overflow-x:auto}
+  .math-block{font-size:11px;line-height:1.8;white-space:normal}
+  .nav-row{align-items:stretch}
+  .nav-btn{padding:8px 12px}
+  .weight-row{gap:10px;min-width:360px}
+}
+</style>
+</head>
+<body>
+
+<main class="backprop-demo">
+<h2 class="sr-only">Interactive backpropagation stepper covering forward pass, backward pass deltas, and weight updates</h2>
+
+<div style="display:flex;gap:6px;justify-content:center;margin-bottom:1.5rem" id="dots"></div>
+<div id="panels"></div>
+</main>
+
+<script>
+function netSVG(highlight){
+  const W=620,H=260;
+  const nodes={
+    p1:{x:60,y:70,label:'p₁',val:'0.8',type:'input'},
+    p2:{x:60,y:180,label:'p₂',val:'0.4',type:'input'},
+    bias1:{x:160,y:230,label:'1',val:'',type:'bias'},
+    y3:{x:290,y:70,label:'y₃',val:'',type:'hidden'},
+    y4:{x:290,y:180,label:'y₄',val:'',type:'hidden'},
+    bias2:{x:390,y:230,label:'1',val:'',type:'bias'},
+    y5:{x:520,y:125,label:'y₅',val:'',type:'output'},
+  };
+  const edges=[
+    {f:'p1',t:'y3',w:'v₁₃=0.6',hi:'v13'},
+    {f:'p1',t:'y4',w:'v₁₄=0.3',hi:'v14'},
+    {f:'p2',t:'y3',w:'v₂₃=0.2',hi:'v23'},
+    {f:'p2',t:'y4',w:'v₂₄=0.7',hi:'v24'},
+    {f:'bias1',t:'y3',w:'v₀₃=0.1',hi:'v03'},
+    {f:'bias1',t:'y4',w:'v₀₄=−0.2',hi:'v04'},
+    {f:'y3',t:'y5',w:'w₃₅=0.5',hi:'w35'},
+    {f:'y4',t:'y5',w:'w₄₅=0.9',hi:'w45'},
+    {f:'bias2',t:'y5',w:'w₀₅=−0.3',hi:'w05'},
+  ];
+  const NR=22;
+  let svg=`<svg width="100%" viewBox="0 0 ${W} ${H}" style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg)"><title>Neural network diagram</title><desc>2 inputs, 2 hidden nodes, 1 output, with bias nodes</desc>`;
+  edges.forEach(e=>{
+    const f=nodes[e.f],t=nodes[e.t];
+    const isHi=highlight&&highlight.includes(e.hi);
+    const col=isHi?'#BA7517':'var(--color-border-secondary)';
+    const sw=isHi?2:0.8;
+    svg+=`<line x1="${f.x}" y1="${f.y}" x2="${t.x}" y2="${t.y}" stroke="${col}" stroke-width="${sw}"/>`;
+    const mx=(f.x+t.x)/2+5, my=(f.y+t.y)/2-5;
+    svg+=`<text x="${mx}" y="${my}" text-anchor="middle" font-size="9" fill="${isHi?'#BA7517':'var(--color-text-tertiary)'}" font-family="var(--font-mono)" font-weight="${isHi?'500':'400'}">${e.w}</text>`;
+  });
+  Object.entries(nodes).forEach(([k,n])=>{
+    const isHi=highlight&&highlight.includes(k);
+    let fill='var(--color-background-secondary)',stroke='var(--color-border-secondary)';
+    if(n.type==='input'){fill=isHi?'#B5D4F4':'#E6F1FB';stroke='#185FA5';}
+    else if(n.type==='hidden'){fill=isHi?'#CECBF6':'#EEEDFE';stroke='#534AB7';}
+    else if(n.type==='output'){fill=isHi?'#9FE1CB':'#E1F5EE';stroke='#0F6E56';}
+    else{fill='var(--color-background-secondary)';stroke='var(--color-border-secondary)';}
+    if(isHi){fill=n.type==='input'?'#B5D4F4':n.type==='hidden'?'#CECBF6':n.type==='output'?'#9FE1CB':'var(--color-background-warning)';}
+    svg+=`<circle cx="${n.x}" cy="${n.y}" r="${NR}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+    svg+=`<text x="${n.x}" y="${n.y-(n.val?4:0)}" text-anchor="middle" dominant-baseline="central" font-size="13" fill="${stroke}" font-family="var(--font-sans)" font-weight="500">${n.label}</text>`;
+    if(n.val) svg+=`<text x="${n.x}" y="${n.y+11}" text-anchor="middle" font-size="10" fill="${stroke}" font-family="var(--font-mono)">${n.val}</text>`;
+  });
+  const labs=[{x:60,y:14,t:'Input layer'},{x:290,y:14,t:'Hidden layer'},{x:520,y:14,t:'Output layer'}];
+  labs.forEach(l=>svg+=`<text x="${l.x}" y="${l.y}" text-anchor="middle" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">${l.t}</text>`);
+  svg+=`</svg>`;
+  return `<div style="margin:1rem 0">${svg}</div>`;
+}
+
+const PANELS=[
+  {
+    title:"Network setup — what we're given",
+    render:()=>`
+      <div class="two-col">
+        <div class="card">
+          <h3>Given values</h3>
+          <div class="math-block">
+Target = <span class="hv">0.7</span><br>
+Learning rate α = <span class="hw">0.5</span><br>
+Activation: σ(a) = 1 / (1 + e⁻ᵃ)<br>
+Derivative shortcut: σ′(a) = y(1 − y)
+          </div>
+        </div>
+        <div class="card">
+          <h3>Initial weights</h3>
+          <div class="math-block" style="font-size:11px">
+v₁₃=0.6  v₁₄=0.3<br>
+v₂₃=0.2  v₂₄=0.7<br>
+v₀₃=0.1  v₀₄=−0.2<br>
+w₃₅=0.5  w₄₅=0.9  w₀₅=−0.3
+          </div>
+        </div>
+      </div>
+      ${netSVG(null)}
+      <div class="card">
+        <h3>The workflow</h3>
+        <p>Forward pass → compute output → calculate error → backward pass (deltas) → update all weights. The goal is to nudge every weight slightly so the output gets closer to the target 0.7.</p>
+      </div>
+    `
+  },
+  {
+    title:"Forward pass — compute a₃ and y₃",
+    render:()=>`
+      <div class="card">
+        <h3>What is the forward pass?</h3>
+        <p>We push the inputs through the network layer by layer. For each node, we first compute the weighted sum <span style="font-family:var(--font-mono)">a</span>, then apply the sigmoid to get the node's output <span style="font-family:var(--font-mono)">y</span>.</p>
+      </div>
+      ${netSVG(['p1','p2','bias1','y3','v13','v23','v03'])}
+      <div class="card">
+        <h3>Hidden node y₃</h3>
+        <div class="math-block">
+a₃ = (p₁ × v₁₃) + (p₂ × v₂₃) + (1 × v₀₃)<br>
+a₃ = (0.8 × 0.6) + (0.4 × 0.2) + (1 × 0.1)<br>
+a₃ = 0.48 + 0.08 + 0.10<br>
+a₃ = <span class="hw">0.66</span><br>
+<br>
+y₃ = σ(0.66) = 1 / (1 + e⁻⁰·⁶⁶)<br>
+y₃ ≈ <span class="hv">0.6593</span>
+        </div>
+        <p>The bias node (value 1) acts like an always-on input — it shifts the activation threshold independently of the actual inputs.</p>
+      </div>
+    `
+  },
+  {
+    title:"Forward pass — compute a₄ and y₄",
+    render:()=>`
+      ${netSVG(['p1','p2','bias1','y4','v14','v24','v04'])}
+      <div class="card">
+        <h3>Hidden node y₄</h3>
+        <div class="math-block">
+a₄ = (p₁ × v₁₄) + (p₂ × v₂₄) + (1 × v₀₄)<br>
+a₄ = (0.8 × 0.3) + (0.4 × 0.7) + (1 × −0.2)<br>
+a₄ = 0.24 + 0.28 + (−0.20)<br>
+a₄ = <span class="hw">0.32</span><br>
+<br>
+y₄ = σ(0.32) = 1 / (1 + e⁻⁰·³²)<br>
+y₄ ≈ <span class="hv">0.5793</span>
+        </div>
+        <p>Note v₀₄ = −0.2 is negative — the bias is pulling this node's activation <em>down</em> slightly.</p>
+      </div>
+      <div class="card">
+        <h3>Hidden layer summary so far</h3>
+        <div class="math-block">y₃ = <span class="hv">0.6593</span>    y₄ = <span class="hv">0.5793</span></div>
+        <p>These become the inputs to the output node y₅.</p>
+      </div>
+    `
+  },
+  {
+    title:"Forward pass — compute a₅ and y₅",
+    render:()=>`
+      ${netSVG(['y3','y4','bias2','y5','w35','w45','w05'])}
+      <div class="card">
+        <h3>Output node y₅</h3>
+        <div class="math-block">
+a₅ = (y₃ × w₃₅) + (y₄ × w₄₅) + (1 × w₀₅)<br>
+a₅ = (0.6593 × 0.5) + (0.5793 × 0.9) + (1 × −0.3)<br>
+a₅ = 0.3297 + 0.5214 + (−0.3)<br>
+a₅ = <span class="hw">0.5510</span><br>
+<br>
+y₅ = σ(0.5510) = 1 / (1 + e⁻⁰·⁵⁵¹⁰)<br>
+y₅ ≈ <span class="hv">0.6344</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Error check</h3>
+        <div class="math-block">
+Target = 0.7<br>
+Output = 0.6344<br>
+Error  = 0.7 − 0.6344 = <span class="hn">0.0656</span> (too low)
+        </div>
+        <p>The network undershot. Backpropagation will nudge the weights to push y₅ upward next time.</p>
+      </div>
+    `
+  },
+  {
+    title:"Backward pass — output delta δ₅",
+    render:()=>`
+      <div class="card">
+        <h3>What is a delta?</h3>
+        <p>The delta (δ) for a node is its share of the blame for the error. It combines how sensitive the node is (the derivative of sigmoid) with how far off the output was. We start at the output and work backwards.</p>
+      </div>
+      ${netSVG(['y5'])}
+      <div class="card">
+        <h3>Output delta δ₅</h3>
+        <div class="math-block">
+δ₅ = y₅(1 − y₅)(target − y₅)<br>
+δ₅ = 0.6344 × (1 − 0.6344) × (0.7 − 0.6344)<br>
+δ₅ = 0.6344 × 0.3656 × 0.0656<br>
+δ₅ ≈ <span class="hv">0.0152</span>
+        </div>
+        <p>The <span style="font-family:var(--font-mono)">y(1−y)</span> part is the sigmoid derivative shortcut — it tells us how steeply the sigmoid curve slopes at this output value. Multiplied by the error, it gives us the gradient signal.</p>
+      </div>
+      <div class="card">
+        <h3>Formula pattern to remember</h3>
+        <div class="math-block">
+Output delta: δ = y(1−y)(target − y)<br>
+Hidden delta: δ = y(1−y)(δ_next × w_to_next)
+        </div>
+        <p>Output nodes use the actual error. Hidden nodes use the downstream delta and weight instead — that's the "propagating backwards" part.</p>
+      </div>
+    `
+  },
+  {
+    title:"Backward pass — hidden delta δ₃",
+    render:()=>`
+      ${netSVG(['y3','y5','w35'])}
+      <div class="card">
+        <h3>Hidden delta δ₃</h3>
+        <p>Node y₃ only connects to y₅ via w₃₅. So its error signal comes entirely from δ₅ multiplied by w₃₅.</p>
+        <div class="math-block">
+δ₃ = y₃(1 − y₃)(δ₅ × w₃₅)<br>
+δ₃ = 0.6593 × (1 − 0.6593) × (0.0152 × 0.5)<br>
+δ₃ = 0.6593 × 0.3407 × 0.0076<br>
+δ₃ ≈ <span class="hv">0.0017</span>
+        </div>
+        <p>Notice we use the <em>current</em> weight w₃₅ = 0.5 here, not the updated one — backprop uses the weights that were active during the forward pass.</p>
+      </div>
+    `
+  },
+  {
+    title:"Backward pass — hidden delta δ₄",
+    render:()=>`
+      ${netSVG(['y4','y5','w45'])}
+      <div class="card">
+        <h3>Hidden delta δ₄</h3>
+        <p>Same idea as δ₃, but using w₄₅ = 0.9.</p>
+        <div class="math-block">
+δ₄ = y₄(1 − y₄)(δ₅ × w₄₅)<br>
+δ₄ = 0.5793 × (1 − 0.5793) × (0.0152 × 0.9)<br>
+δ₄ = 0.5793 × 0.4207 × 0.0137<br>
+δ₄ ≈ <span class="hv">0.0033</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>All deltas — complete</h3>
+        <div class="math-block">
+δ₅ = <span class="hv">0.0152</span>   (output node)<br>
+δ₃ = <span class="hv">0.0017</span>   (hidden node y₃)<br>
+δ₄ = <span class="hv">0.0033</span>   (hidden node y₄)
+        </div>
+        <p>These three values are now used to update every weight in the network. Larger delta = that node gets bigger weight corrections.</p>
+      </div>
+    `
+  },
+  {
+    title:"Weight update rule",
+    render:()=>`
+      <div class="card">
+        <h3>The formula</h3>
+        <div class="math-block">
+Δweight<sub>ij</sub> = α × δ<sub>j</sub> × output<sub>i</sub><br>
+new weight = old weight + Δweight
+        </div>
+        <p>For any weight connecting node i → node j: use the <span class="hw">delta of the destination node (j)</span> and the <span class="hi">output value of the source node (i)</span>.</p>
+      </div>
+      <div class="card">
+        <h3>Memory tip</h3>
+        <p>The weight carries the error signal from j back to i. So δ belongs to j (where the weight arrives), and the output belongs to i (where the weight leaves).</p>
+        <div class="math-block">
+w₃₅: weight from y₃ → y₅<br>
+  δ = δ₅ (destination)    output = y₃ (source)<br>
+  Δw₃₅ = 0.5 × 0.0152 × 0.6593
+        </div>
+      </div>
+      <div class="card">
+        <h3>Which delta for each weight group</h3>
+        <div class="three-col" style="margin-top:8px">
+          <div style="font-size:12px"><span class="tag-purple" style="margin-bottom:6px;display:block">→ y₃ weights</span>v₁₃, v₂₃, v₀₃<br>use <span class="hv">δ₃</span></div>
+          <div style="font-size:12px"><span class="tag-purple" style="margin-bottom:6px;display:block">→ y₄ weights</span>v₁₄, v₂₄, v₀₄<br>use <span class="hv">δ₄</span></div>
+          <div style="font-size:12px"><span class="tag-ok" style="margin-bottom:6px;display:block">→ y₅ weights</span>w₃₅, w₄₅, w₀₅<br>use <span class="hv">δ₅</span></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title:"Weight updates — input → hidden (y₃)",
+    render:()=>`
+      ${netSVG(['p1','p2','bias1','y3','v13','v23','v03'])}
+      <div class="card">
+        <h3>All three weights into y₃ — use δ₃ = 0.0017, α = 0.5</h3>
+        <div class="math-block">
+Δv₁₃ = 0.5 × 0.0017 × <span class="hi">p₁(0.8)</span> = <span class="hw">0.0007</span><br>
+v₁₃(new) = 0.6 + 0.0007 = <span class="hv">0.6007</span><br>
+<br>
+Δv₂₃ = 0.5 × 0.0017 × <span class="hi">p₂(0.4)</span> = <span class="hw">0.0003</span><br>
+v₂₃(new) = 0.2 + 0.0003 = <span class="hv">0.2003</span><br>
+<br>
+Δv₀₃ = 0.5 × 0.0017 × <span class="hi">1(bias)</span> = <span class="hw">0.0009</span><br>
+v₀₃(new) = 0.1 + 0.0009 = <span class="hv">0.1009</span>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-secondary)">Source outputs: p₁=0.8, p₂=0.4, bias=1. All three use δ₃ as the destination delta.</p>
+      </div>
+    `
+  },
+  {
+    title:"Weight updates — input → hidden (y₄)",
+    render:()=>`
+      ${netSVG(['p1','p2','bias1','y4','v14','v24','v04'])}
+      <div class="card">
+        <h3>All three weights into y₄ — use δ₄ = 0.0033, α = 0.5</h3>
+        <div class="math-block">
+Δv₁₄ = 0.5 × 0.0033 × <span class="hi">p₁(0.8)</span> = <span class="hw">0.0013</span><br>
+v₁₄(new) = 0.3 + 0.0013 = <span class="hv">0.3013</span><br>
+<br>
+Δv₂₄ = 0.5 × 0.0033 × <span class="hi">p₂(0.4)</span> = <span class="hw">0.0007</span><br>
+v₂₄(new) = 0.7 + 0.0007 = <span class="hv">0.7007</span><br>
+<br>
+Δv₀₄ = 0.5 × 0.0033 × <span class="hi">1(bias)</span> = <span class="hw">0.0017</span><br>
+v₀₄(new) = −0.2 + 0.0017 = <span class="hv">−0.1983</span>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-secondary)">v₀₄ was negative and stays negative — the bias is still pulling y₄ down, just slightly less than before.</p>
+      </div>
+    `
+  },
+  {
+    title:"Weight updates — hidden → output (y₅)",
+    render:()=>`
+      ${netSVG(['y3','y4','bias2','y5','w35','w45','w05'])}
+      <div class="card">
+        <h3>All three weights into y₅ — use δ₅ = 0.0152, α = 0.5</h3>
+        <div class="math-block">
+Δw₃₅ = 0.5 × 0.0152 × <span class="hi">y₃(0.6593)</span> = <span class="hw">0.0050</span><br>
+w₃₅(new) = 0.5 + 0.0050 = <span class="hv">0.5050</span><br>
+<br>
+Δw₄₅ = 0.5 × 0.0152 × <span class="hi">y₄(0.5793)</span> = <span class="hw">0.0044</span><br>
+w₄₅(new) = 0.9 + 0.0044 = <span class="hv">0.9044</span><br>
+<br>
+Δw₀₅ = 0.5 × 0.0152 × <span class="hi">1(bias)</span> = <span class="hw">0.0076</span><br>
+w₀₅(new) = −0.3 + 0.0076 = <span class="hv">−0.2924</span>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-secondary)">These are the largest updates because δ₅ = 0.0152 is larger than δ₃ or δ₄. The output layer weights change the most.</p>
+      </div>
+    `
+  },
+  {
+    title:"Summary — all updated weights",
+    render:()=>`
+      <div class="card">
+        <h3>Complete weight table</h3>
+        <div class="three-col">
+          <div>
+            <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">Input → y₃</div>
+            <div class="weight-row"><span>v₁₃</span><span class="weight-old">0.6</span><span class="weight-delta">+0.0007</span><span class="weight-new">0.6007</span></div>
+            <div class="weight-row"><span>v₂₃</span><span class="weight-old">0.2</span><span class="weight-delta">+0.0003</span><span class="weight-new">0.2003</span></div>
+            <div class="weight-row"><span>v₀₃</span><span class="weight-old">0.1</span><span class="weight-delta">+0.0009</span><span class="weight-new">0.1009</span></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">Input → y₄</div>
+            <div class="weight-row"><span>v₁₄</span><span class="weight-old">0.3</span><span class="weight-delta">+0.0013</span><span class="weight-new">0.3013</span></div>
+            <div class="weight-row"><span>v₂₄</span><span class="weight-old">0.7</span><span class="weight-delta">+0.0007</span><span class="weight-new">0.7007</span></div>
+            <div class="weight-row"><span>v₀₄</span><span class="weight-old">−0.2</span><span class="weight-delta">+0.0017</span><span class="weight-new">−0.1983</span></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">Hidden → y₅</div>
+            <div class="weight-row"><span>w₃₅</span><span class="weight-old">0.5</span><span class="weight-delta">+0.0050</span><span class="weight-new">0.5050</span></div>
+            <div class="weight-row"><span>w₄₅</span><span class="weight-old">0.9</span><span class="weight-delta">+0.0044</span><span class="weight-new">0.9044</span></div>
+            <div class="weight-row"><span>w₀₅</span><span class="weight-old">−0.3</span><span class="weight-delta">+0.0076</span><span class="weight-new">−0.2924</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>The workflow in order — exam checklist</h3>
+        <div class="math-block" style="font-size:11px;line-height:2">
+1. Compute a₃, apply sigmoid → y₃<br>
+2. Compute a₄, apply sigmoid → y₄<br>
+3. Compute a₅ using y₃, y₄, bias → apply sigmoid → y₅<br>
+4. Compute δ₅ = y₅(1−y₅)(target − y₅)<br>
+5. Compute δ₃ = y₃(1−y₃)(δ₅ × w₃₅)<br>
+6. Compute δ₄ = y₄(1−y₄)(δ₅ × w₄₅)<br>
+7. Δweight = α × δ<sub>destination</sub> × output<sub>source</sub><br>
+8. new weight = old + Δweight
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Common exam traps</h3>
+          <p>Using the wrong delta — always ask "which node does this weight <em>arrive at</em>?" and use that node's delta. Using the updated weight in backprop — always use the original weights from the forward pass.</p>
+        </div>
+        <div class="card">
+          <h3>Why all changes are positive here</h3>
+          <p>The output was 0.6344, the target was 0.7 — the error was positive, so all deltas are positive, so all weights increased slightly. If the output had overshot, deltas would be negative and weights would decrease.</p>
+        </div>
+      </div>
+    `
+  }
+];
+
+let cur=0;
+
+function resizeHostFrame(){
+  if(!window.frameElement)return;
+  requestAnimationFrame(()=>{
+    const demo=document.querySelector('.backprop-demo');
+    const height=Math.ceil(demo?demo.getBoundingClientRect().height:document.body.scrollHeight);
+    window.frameElement.style.height=`${height}px`;
+  });
+}
+
+function dots(){
+  document.getElementById('dots').innerHTML=PANELS.map((_,i)=>`<div class="dot${i===0?' active':''}" id="d${i}"></div>`).join('');
+}
+
+function render(idx){
+  const p=PANELS[idx];
+  document.getElementById('panels').innerHTML=`
+    <div style="font-size:16px;font-weight:500;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--color-border-tertiary)">${p.title}</div>
+    ${p.render()}
+    <div class="nav-row">
+      <button class="nav-btn" onclick="go(${idx-1})" ${idx===0?'disabled':''}>← Previous</button>
+      <span class="step-counter">${idx+1} / ${PANELS.length}</span>
+      <button class="nav-btn" onclick="go(${idx+1})" ${idx===PANELS.length-1?'disabled':''}>Next →</button>
+    </div>`;
+  resizeHostFrame();
+}
+
+function go(idx){
+  if(idx<0||idx>=PANELS.length)return;
+  cur=idx;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  render(idx);
+}
+
+dots();
+render(0);
+window.addEventListener('load', resizeHostFrame);
+</script>
+</body>
+</html>

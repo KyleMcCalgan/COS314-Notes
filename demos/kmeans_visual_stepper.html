@@ -1,0 +1,413 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-means Visual Stepper</title>
+<style>
+:root{
+  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --border-radius-md:4px;
+  --border-radius-lg:6px;
+  --color-background-primary:#1c1c28;
+  --color-background-secondary:#181824;
+  --color-background-success:rgba(120,169,58,.14);
+  --color-background-danger:rgba(176,88,72,.15);
+  --color-background-warning:rgba(193,134,43,.16);
+  --color-background-info:rgba(76,145,195,.16);
+  --color-border-secondary:#34344e;
+  --color-border-tertiary:#34344e;
+  --color-text-primary:#c4c4d8;
+  --color-text-secondary:#9696b2;
+  --color-text-tertiary:#787896;
+  --color-text-success:#9bc75f;
+  --color-text-danger:#d27a68;
+  --color-text-warning:#d3a24c;
+  --color-text-info:#79b5df;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-width:0;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);line-height:1.6}
+.kmeans-demo{padding:18px;overflow:hidden}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--color-border-secondary);transition:background .2s}
+.dot.active{background:var(--color-text-primary)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.card h3{font-size:14px;font-weight:500;margin:0 0 6px}
+.card p{font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.6}
+.math-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-family:var(--font-mono);font-size:12px;margin:.75rem 0;line-height:2;color:var(--color-text-primary)}
+.hv{color:var(--color-text-success);font-weight:500}
+.hn{color:var(--color-text-danger);font-weight:500}
+.hw{color:var(--color-text-warning);font-weight:500}
+.nav-row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:1rem}
+.nav-btn{padding:8px 20px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:13px;cursor:pointer;color:var(--color-text-primary);transition:all .15s}
+.nav-btn:hover{background:var(--color-background-secondary)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.step-counter{font-size:12px;color:var(--color-text-secondary)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dtable{width:100%;border-collapse:collapse;font-size:12px;margin:.75rem 0}
+.dtable th{text-align:left;padding:5px 8px;font-weight:500;font-size:11px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.dtable td{padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-family:var(--font-mono);color:var(--color-text-primary)}
+.dtable tr.winner td{background:var(--color-background-success)}
+.dtable td.win{color:var(--color-text-success);font-weight:500}
+.cluster-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500}
+.c1{background:#E1F5EE;color:#085041}.c2{background:#FAECE7;color:#712B13}
+.tag-info{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-info);color:var(--color-text-info)}
+.tag-warn{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-warning);color:var(--color-text-warning)}
+.tag-ok{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-success);color:var(--color-text-success)}
+@media(max-width:640px){
+  .kmeans-demo{padding:12px}
+  .two-col{grid-template-columns:1fr}
+  .card{padding:.875rem 1rem;overflow-x:auto}
+  .math-block{font-size:11px;line-height:1.8;white-space:normal}
+  .nav-row{align-items:stretch}
+  .nav-btn{padding:8px 12px}
+  .dtable{min-width:460px}
+}
+</style>
+</head>
+<body>
+
+<main class="kmeans-demo">
+<h2 class="sr-only">Interactive K-Means clustering stepper walking through the full worked example</h2>
+
+<div style="display:flex;gap:6px;justify-content:center;margin-bottom:1.5rem" id="dots"></div>
+<div id="panels"></div>
+</main>
+
+<script>
+const POINTS = [
+  {id:'E1',x:1,  y:1  },
+  {id:'E2',x:1.5,y:2  },
+  {id:'E3',x:3,  y:4  },
+  {id:'E4',x:5,  y:7  },
+  {id:'E5',x:3.5,y:5  },
+];
+
+const C1_INIT = {x:1.5,y:2};
+const C2_INIT = {x:5,  y:7};
+
+function dist(ax,ay,bx,by){
+  return Math.sqrt(Math.pow(ax-bx,2)+Math.pow(ay-by,2));
+}
+function r(v){return Math.round(v*100)/100;}
+
+function plotSVG(clusters, c1, c2, highlightId){
+  const W=620,H=300,PAD=40;
+  const mx=(x)=>PAD+(x/7)*(W-2*PAD);
+  const my=(y)=>H-PAD-(y/8)*(H-2*PAD);
+  const C1COL='#1D9E75', C2COL='#D85A30';
+  const C1BG='#E1F5EE', C2BG='#FAECE7';
+
+  let svg=`<svg width="100%" viewBox="0 0 ${W} ${H}" style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg)"><title>K-Means plot</title><desc>Scatter plot showing data points and centroids</desc>`;
+
+  for(let gx=0;gx<=7;gx++){
+    const x=mx(gx);
+    svg+=`<line x1="${x}" y1="${PAD}" x2="${x}" y2="${H-PAD}" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>`;
+    svg+=`<text x="${x}" y="${H-PAD+14}" text-anchor="middle" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">${gx}</text>`;
+  }
+  for(let gy=0;gy<=8;gy++){
+    const y=my(gy);
+    svg+=`<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>`;
+    svg+=`<text x="${PAD-6}" y="${y}" text-anchor="end" dominant-baseline="central" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">${gy}</text>`;
+  }
+
+  POINTS.forEach(p=>{
+    const cx=mx(p.x), cy=my(p.y);
+    const cl=clusters?clusters[p.id]:null;
+    const col=cl===1?C1COL:cl===2?C2COL:'var(--color-text-secondary)';
+    const bg=cl===1?C1BG:cl===2?C2BG:'var(--color-background-secondary)';
+    const isHi=highlightId===p.id;
+    svg+=`<circle cx="${cx}" cy="${cy}" r="${isHi?10:7}" fill="${bg}" stroke="${col}" stroke-width="${isHi?2:1.5}"/>`;
+    svg+=`<text x="${cx}" y="${cy-13}" text-anchor="middle" font-size="11" fill="${col}" font-family="var(--font-sans)" font-weight="${isHi?'500':'400'}">${p.id}</text>`;
+  });
+
+  if(c1){
+    const cx=mx(c1.x),cy=my(c1.y);
+    svg+=`<polygon points="${cx},${cy-11} ${cx+10},${cy+7} ${cx-10},${cy+7}" fill="${C1COL}" opacity="0.9"/>`;
+    svg+=`<text x="${cx+14}" y="${cy+3}" font-size="11" fill="${C1COL}" font-family="var(--font-sans)">C1(${r(c1.x)},${r(c1.y)})</text>`;
+  }
+  if(c2){
+    const cx=mx(c2.x),cy=my(c2.y);
+    svg+=`<polygon points="${cx},${cy-11} ${cx+10},${cy+7} ${cx-10},${cy+7}" fill="${C2COL}" opacity="0.9"/>`;
+    svg+=`<text x="${cx+14}" y="${cy+3}" font-size="11" fill="${C2COL}" font-family="var(--font-sans)">C2(${r(c2.x)},${r(c2.y)})</text>`;
+  }
+
+  svg+=`</svg>`;
+  return `<div style="margin:1rem 0">${svg}</div>`;
+}
+
+function distCalc(px,py,cx,cy,label){
+  const dx=r(px-cx), dy=r(py-cy);
+  const dx2=r(dx*dx), dy2=r(dy*dy);
+  const sum=r(dx2+dy2);
+  const d=r(Math.sqrt(sum));
+  return `(${px}−${cx})²+(${py}−${cy})² = ${dx2}+${dy2} = ${sum} → √${sum} = <span class="hw">${d}</span>`;
+}
+
+const PANELS = [
+  {
+    title:"What we're doing",
+    render:()=>`
+      <div class="card">
+        <h3>The dataset</h3>
+        <p>5 data points, each with 2 attributes (x and y coordinates). We want to group them into K=2 clusters. We pick 2 initial centroids: C1 = E2 = (1.5, 2) and C2 = E4 = (5, 7).</p>
+      </div>
+      ${plotSVG(null,C1_INIT,C2_INIT,null)}
+      <div class="two-col">
+        <div class="card">
+          <h3>Data points</h3>
+          <table class="dtable">
+            <tr><th>Entity</th><th>Attr1</th><th>Attr2</th></tr>
+            ${POINTS.map(p=>`<tr><td>${p.id}</td><td>${p.x}</td><td>${p.y}</td></tr>`).join('')}
+          </table>
+        </div>
+        <div class="card">
+          <h3>Initial centroids</h3>
+          <p style="margin-bottom:8px"><span class="cluster-pill c1">C1</span> E2 = (1.5, 2)</p>
+          <p><span class="cluster-pill c2">C2</span> E4 = (5, 7)</p>
+          <p style="margin-top:8px">Because E2 and E4 are already centroids, we only need to calculate distances for E1, E3, and E5.</p>
+        </div>
+      </div>
+    `
+  },
+  {
+    title:"Iteration 1 — assign E1",
+    render:()=>`
+      <div class="card">
+        <h3>E1 = (1, 1)</h3>
+        <p>Calculate Euclidean distance from E1 to each centroid, then assign to the closer one.</p>
+        <div class="math-block">
+To C1 (1.5, 2): ${distCalc(1,1,1.5,2,'C1')}<br>
+To C2 (5, 7):   ${distCalc(1,1,5,7,'C2')}
+        </div>
+        <p>1.12 &lt; 7.21 → <span class="cluster-pill c1">E1 → Cluster 1</span></p>
+      </div>
+      ${plotSVG({E1:1,E2:1,E4:2},C1_INIT,C2_INIT,'E1')}
+      <div class="card">
+        <h3>Current assignments</h3>
+        <p><span class="cluster-pill c1">Cluster 1</span> E2 (centroid), E1</p>
+        <p style="margin-top:4px"><span class="cluster-pill c2">Cluster 2</span> E4 (centroid)</p>
+        <p style="margin-top:4px">E3, E5 still unassigned.</p>
+      </div>
+    `
+  },
+  {
+    title:"Iteration 1 — assign E3",
+    render:()=>`
+      <div class="card">
+        <h3>E3 = (3, 4)</h3>
+        <div class="math-block">
+To C1 (1.5, 2): ${distCalc(3,4,1.5,2,'C1')}<br>
+To C2 (5, 7):   ${distCalc(3,4,5,7,'C2')}
+        </div>
+        <p>2.50 &lt; 3.61 → <span class="cluster-pill c1">E3 → Cluster 1</span></p>
+      </div>
+      ${plotSVG({E1:1,E2:1,E3:1,E4:2},C1_INIT,C2_INIT,'E3')}
+      <div class="card">
+        <h3>Current assignments</h3>
+        <p><span class="cluster-pill c1">Cluster 1</span> E1, E2, E3</p>
+        <p style="margin-top:4px"><span class="cluster-pill c2">Cluster 2</span> E4</p>
+        <p style="margin-top:4px">E5 still unassigned.</p>
+      </div>
+    `
+  },
+  {
+    title:"Iteration 1 — assign E5",
+    render:()=>`
+      <div class="card">
+        <h3>E5 = (3.5, 5)</h3>
+        <div class="math-block">
+To C1 (1.5, 2): ${distCalc(3.5,5,1.5,2,'C1')}<br>
+To C2 (5, 7):   ${distCalc(3.5,5,5,7,'C2')}
+        </div>
+        <p>2.50 &lt; 3.61 → <span class="cluster-pill c2">E5 → Cluster 2</span></p>
+      </div>
+      ${plotSVG({E1:1,E2:1,E3:1,E4:2,E5:2},C1_INIT,C2_INIT,'E5')}
+      <div class="card">
+        <h3>All assigned — end of assignment phase</h3>
+        <p><span class="cluster-pill c1">Cluster 1</span> E1 (1,1), E2 (1.5,2), E3 (3,4)</p>
+        <p style="margin-top:4px"><span class="cluster-pill c2">Cluster 2</span> E4 (5,7), E5 (3.5,5)</p>
+      </div>
+    `
+  },
+  {
+    title:"Iteration 1 — update centroids",
+    render:()=>`
+      <div class="card">
+        <h3>Recalculate C1</h3>
+        <p>Take the mean of every attribute across all points in Cluster 1.</p>
+        <div class="math-block">
+Cluster 1: E1(1,1), E2(1.5,2), E3(3,4)<br>
+Attr1 mean: (1 + 1.5 + 3) / 3 = 5.5 / 3 = <span class="hv">1.83</span><br>
+Attr2 mean: (1 + 2 + 4) / 3 = 7 / 3 = <span class="hv">2.33</span><br>
+New C1 = <span class="hv">(1.83, 2.33)</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Recalculate C2</h3>
+        <div class="math-block">
+Cluster 2: E4(5,7), E5(3.5,5)<br>
+Attr1 mean: (5 + 3.5) / 2 = 8.5 / 2 = <span class="hv">4.25</span><br>
+Attr2 mean: (7 + 5) / 2 = 12 / 2 = <span class="hv">6.00</span><br>
+New C2 = <span class="hv">(4.25, 6.00)</span>
+        </div>
+      </div>
+      ${plotSVG({E1:1,E2:1,E3:1,E4:2,E5:2},{x:1.83,y:2.33},{x:4.25,y:6},'null')}
+      <div class="card">
+        <h3>Centroids have moved</h3>
+        <p>C1 shifted from (1.5, 2) → (1.83, 2.33). C2 shifted from (5, 7) → (4.25, 6.00). Because centroids moved, some points might now be closer to the other centroid. We must re-run the assignment phase.</p>
+      </div>
+    `
+  },
+  {
+    title:"Iteration 2 — reassign all points",
+    render:()=>`
+      <div class="card">
+        <h3>New centroids: C1 = (1.83, 2.33), C2 = (4.25, 6.00)</h3>
+        <p>Now we check ALL 5 points — including E2 and E4 which were centroids before. Everything is recalculated fresh.</p>
+      </div>
+      <div class="card">
+        <table class="dtable">
+          <tr><th>Entity</th><th>To C1 (1.83,2.33)</th><th>To C2 (4.25,6)</th><th>Assigned</th></tr>
+          <tr class="winner">
+            <td>E1 (1,1)</td>
+            <td class="win">1.57</td>
+            <td>5.96</td>
+            <td><span class="cluster-pill c1">C1</span></td>
+          </tr>
+          <tr class="winner">
+            <td>E2 (1.5,2)</td>
+            <td class="win">0.46</td>
+            <td>4.85</td>
+            <td><span class="cluster-pill c1">C1</span></td>
+          </tr>
+          <tr class="winner">
+            <td>E3 (3,4)</td>
+            <td class="win">2.04</td>
+            <td>2.35</td>
+            <td><span class="cluster-pill c1">C1</span></td>
+          </tr>
+          <tr class="winner">
+            <td>E4 (5,7)</td>
+            <td>5.64</td>
+            <td class="win">1.25</td>
+            <td><span class="cluster-pill c2">C2</span></td>
+          </tr>
+          <tr class="winner">
+            <td>E5 (3.5,5)</td>
+            <td>3.15</td>
+            <td class="win">1.25</td>
+            <td><span class="cluster-pill c2">C2</span></td>
+          </tr>
+        </table>
+      </div>
+      ${plotSVG({E1:1,E2:1,E3:1,E4:2,E5:2},{x:1.83,y:2.33},{x:4.25,y:6},null)}
+    `
+  },
+  {
+    title:"Iteration 2 — convergence check",
+    render:()=>`
+      <div class="card">
+        <h3>Did anything move?</h3>
+        <p>Compare cluster membership from iteration 1 vs iteration 2.</p>
+        <div class="math-block">
+Iteration 1: C1={E1,E2,E3}  C2={E4,E5}<br>
+Iteration 2: C1={E1,E2,E3}  C2={E4,E5}<br>
+<span class="hv">No point moved.</span>
+        </div>
+        <p><span class="tag-ok">Converged</span> — the while loop exits. Algorithm complete.</p>
+      </div>
+      ${plotSVG({E1:1,E2:1,E3:1,E4:2,E5:2},{x:1.83,y:2.33},{x:4.25,y:6},null)}
+      <div class="two-col">
+        <div class="card">
+          <h3>Final cluster 1</h3>
+          <p>E1 (1,1)<br>E2 (1.5,2)<br>E3 (3,4)</p>
+          <p style="margin-top:6px;font-size:12px;color:var(--color-text-secondary)">Centroid: (1.83, 2.33)</p>
+        </div>
+        <div class="card">
+          <h3>Final cluster 2</h3>
+          <p>E4 (5,7)<br>E5 (3.5,5)</p>
+          <p style="margin-top:6px;font-size:12px;color:var(--color-text-secondary)">Centroid: (4.25, 6.00)</p>
+        </div>
+      </div>
+    `
+  },
+  {
+    title:"Summary — the full picture",
+    render:()=>`
+      <div class="card">
+        <h3>What the algorithm did</h3>
+        <p>It started with two seed points far apart, used distance to pull nearby points toward each one, then nudged the centres toward the true middle of each group. After one iteration it was already stable.</p>
+      </div>
+      <div class="card">
+        <h3>The pattern to follow in every exam question</h3>
+        <div class="math-block">
+1. Identify which points are already centroids (dist = 0, skip them)<br>
+2. For each remaining point: calc dist to each centroid, assign to nearest<br>
+3. Recalculate each centroid: mean of Attr1, mean of Attr2 separately<br>
+4. Re-run ALL points against the new centroids<br>
+5. If no point changes cluster → converged, stop<br>
+   If any point moved → do another iteration
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Common exam traps</h3>
+          <p>Round to 2 decimal places at every step — don't carry unrounded values forward. In iteration 2, check ALL points, not just the ones that weren't centroids before. Show the convergence check explicitly as a second epoch.</p>
+        </div>
+        <div class="card">
+          <h3>Equal distance tie</h3>
+          <p>If a point is equidistant from both centroids, assign it to either cluster consistently. The exam will usually state which to prefer, or the numbers avoid it entirely.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Why did E3 stay in Cluster 1?</h3>
+        <p>E3 = (3,4) is the interesting one — it was 2.50 from C1 and 3.61 from C2 in iteration 1. After the centroids moved, it was 2.04 from C1 and 2.35 from C2. Still closer to C1, but only just. If the data were slightly different, E3 could have flipped to Cluster 2 — that's exactly the kind of borderline point that causes an extra iteration.</p>
+      </div>
+    `
+  }
+];
+
+let cur=0;
+
+function resizeHostFrame(){
+  if(!window.frameElement)return;
+  requestAnimationFrame(()=>{
+    const demo=document.querySelector('.kmeans-demo');
+    const height=Math.ceil(demo?demo.getBoundingClientRect().height:document.body.scrollHeight);
+    window.frameElement.style.height=`${height}px`;
+  });
+}
+
+function dots(){
+  document.getElementById('dots').innerHTML=PANELS.map((_,i)=>`<div class="dot${i===0?' active':''}" id="d${i}"></div>`).join('');
+}
+
+function render(idx){
+  const p=PANELS[idx];
+  document.getElementById('panels').innerHTML=`
+    <div style="font-size:16px;font-weight:500;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--color-border-tertiary)">${p.title}</div>
+    ${p.render()}
+    <div class="nav-row">
+      <button class="nav-btn" onclick="go(${idx-1})" ${idx===0?'disabled':''}>← Previous</button>
+      <span class="step-counter">${idx+1} / ${PANELS.length}</span>
+      <button class="nav-btn" onclick="go(${idx+1})" ${idx===PANELS.length-1?'disabled':''}>Next →</button>
+    </div>`;
+  resizeHostFrame();
+}
+
+function go(idx){
+  if(idx<0||idx>=PANELS.length)return;
+  cur=idx;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  render(idx);
+}
+
+dots();
+render(0);
+window.addEventListener('load', resizeHostFrame);
+</script>
+</body>
+</html>

@@ -8,6 +8,13 @@
 <style>
   :root { --accent: #8c67c1; --accent2: #4c91c3; --accent3: #c1862b; }
   .hero::before { content: '12'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #1c1c28;
+    margin: 14px 0;
+  }
 </style>
 </head>
 <body>
@@ -144,6 +151,12 @@ return final clusters and centroids</div>
   </div>
 
   <div class="section">
+    <h2>Interactive Demo: K-means Visual Stepper</h2>
+    <p>This walkthrough ties the full worked example together: initial centroids, distance calculations, cluster assignments, centroid updates, and the convergence check.</p>
+    <iframe class="demo-frame" src="demos/kmeans_visual_stepper.html" title="K-means Visual Stepper" style="height: 980px"></iframe>
+  </div>
+
+  <div class="section">
     <h2>Advantages and Limitations</h2>
     <div class="grid2">
       <div class="card">
@@ -174,5 +187,16 @@ return final clusters and centroids</div>
 </div>
 
 <script src="collapsible.js"></script>
+<script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      var doc = this.contentDocument;
+      var demo = doc.querySelector('.kmeans-demo');
+      this.style.height = Math.ceil(demo ? demo.getBoundingClientRect().height : doc.body.scrollHeight) + 'px';
+    } catch (e) {}
+  });
+});
+</script>
 </body>
 </html>
