@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --color-border-secondary: #34344e;
+  --color-border-tertiary: #252534;
+  --color-background-primary: #0f1117;
+  --color-background-secondary: #181824;
+  --color-background-muted: #10121a;
+  --color-background-info: #1d3142;
+  --color-background-success: #17372e;
+  --color-background-warning: #3a2b18;
+  --color-background-danger: #3a1d24;
+  --color-text-primary: #d8d8eb;
+  --color-text-secondary: #b9b9d0;
+  --color-text-tertiary: #8c8ca8;
+  --color-text-info: #9cc9ec;
+  --color-text-success: #75d6ae;
+  --color-text-warning: #e3bc72;
+  --color-text-danger: #e99aa9;
+  --color-border-info: #4c91c3;
+  --color-border-success: #3a8f72;
+  --color-border-warning: #9d7740;
+  --color-border-danger: #9a5360;
+  --border-radius-md: 6px;
+  --border-radius-lg: 10px;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-family: "Segoe UI", Arial, sans-serif;
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+button { font: inherit; }
+.search-demo { padding: 18px; }
+.demo-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  margin-bottom: 16px;
+}
+.demo-title { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+.demo-subtitle { color: var(--color-text-secondary); font-size: 13px; margin: 0; max-width: 760px; }
+.mode-pill {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 0.5px solid var(--color-border-info);
+  background: var(--color-background-info);
+  color: var(--color-text-info);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.demo-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.2fr) minmax(280px, .8fr);
+  gap: 14px;
+  align-items: start;
+}
+.panel {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 14px;
+  min-width: 0;
+}
+.panel h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--color-text-primary);
+}
+.tree-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-muted);
+}
+.queue-row, .closed-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 34px;
+  align-items: center;
+}
+.queue-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.queue-label {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+.node-chip {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.node-chip.next { border-color: var(--color-border-info); background: var(--color-background-info); color: var(--color-text-info); }
+.node-chip.closed { border-color: var(--color-border-success); background: var(--color-background-success); color: var(--color-text-success); }
+.node-chip.goal { border-color: var(--color-border-danger); background: var(--color-background-danger); color: var(--color-text-danger); }
+.empty { color: var(--color-text-tertiary); font-size: 12px; }
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+.mono { font-family: var(--font-mono); }
+.explain {
+  display: grid;
+  gap: 10px;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat {
+  border-top: 0.5px solid var(--color-border-tertiary);
+  padding-top: 10px;
+}
+.stat .k { color: var(--color-text-tertiary); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.stat .v { margin-top: 4px; font-family: var(--font-mono); color: var(--color-text-primary); font-size: 13px; }
+.action-card {
+  background: var(--color-background-muted);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 12px;
+}
+.action-card p { margin: 0; color: var(--color-text-secondary); font-size: 13px; }
+.action-card strong { color: var(--color-text-primary); font-weight: 600; }
+.nav-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+}
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.btn:hover { background: var(--color-background-secondary); border-color: var(--color-border-info); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn-primary { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); }
+.counter { color: var(--color-text-tertiary); font-family: var(--font-mono); font-size: 12px; }
+@media (max-width: 760px) {
+  .demo-head, .nav-row { align-items: stretch; flex-direction: column; }
+  .demo-grid, .stat-grid { grid-template-columns: 1fr; }
+  .queue-shell { grid-template-columns: 1fr; }
+  .mode-pill { width: fit-content; }
+}
+</style>
+</head>
+<body>
+<div id="main">
+  <div class="search-demo">
+    <div class="demo-head">
+      <div>
+        <h2 class="demo-title">BFS queue visualiser</h2>
+        <p class="demo-subtitle">The OPEN list is a queue. The next node is removed from the left, and newly generated children join the right end.</p>
+      </div>
+      <div class="mode-pill">front = left</div>
+    </div>
+    <div id="demo"></div>
+  </div>
+</div>
+<script>
+const NODES = {
+  A: { id: "A", x: 310, y: 42, children: ["B", "C"] },
+  B: { id: "B", x: 180, y: 125, children: ["D", "E"] },
+  C: { id: "C", x: 440, y: 125, children: ["F", "G"] },
+  D: { id: "D", x: 105, y: 215, children: ["I", "J"] },
+  E: { id: "E", x: 250, y: 215, children: [] },
+  F: { id: "F", x: 390, y: 215, children: [] },
+  G: { id: "G", x: 535, y: 215, children: [] },
+  I: { id: "I", x: 70, y: 305, children: ["K", "L"] },
+  J: { id: "J", x: 145, y: 305, children: [] },
+  K: { id: "K", x: 35, y: 385, children: [] },
+  L: { id: "L", x: 105, y: 385, children: [] }
+};
+const GOAL = "J";
+const EDGES = Object.values(NODES).flatMap(n => n.children.map(c => [n.id, c]));
+const STEPS = [
+  { x: "", children: [], open: ["A"], closed: [], visited: [], action: "Initial state. The queue contains only the start node A." },
+  { x: "A", children: ["B", "C"], open: ["B", "C"], closed: ["A"], visited: ["A"], action: "Dequeue A from the left. Enqueue B and C on the right." },
+  { x: "B", children: ["D", "E"], open: ["C", "D", "E"], closed: ["A", "B"], visited: ["A", "B"], action: "Dequeue B. D and E join the rear, after C." },
+  { x: "C", children: ["F", "G"], open: ["D", "E", "F", "G"], closed: ["A", "B", "C"], visited: ["A", "B", "C"], action: "Dequeue C. F and G join the rear. BFS finishes the current level before going deeper." },
+  { x: "D", children: ["I", "J"], open: ["E", "F", "G", "I", "J"], closed: ["A", "B", "C", "D"], visited: ["A", "B", "C", "D"], action: "Dequeue D. I and J are enqueued after the rest of the frontier." },
+  { x: "E", children: [], open: ["F", "G", "I", "J"], closed: ["A", "B", "C", "D", "E"], visited: ["A", "B", "C", "D", "E"], action: "Dequeue E. It has no children, so the queue simply advances." },
+  { x: "F", children: [], open: ["G", "I", "J"], closed: ["A", "B", "C", "D", "E", "F"], visited: ["A", "B", "C", "D", "E", "F"], action: "Dequeue F. No new nodes are added." },
+  { x: "G", children: [], open: ["I", "J"], closed: ["A", "B", "C", "D", "E", "F", "G"], visited: ["A", "B", "C", "D", "E", "F", "G"], action: "Dequeue G. BFS now moves to the next depth level." },
+  { x: "I", children: ["K", "L"], open: ["J", "K", "L"], closed: ["A", "B", "C", "D", "E", "F", "G", "I"], visited: ["A", "B", "C", "D", "E", "F", "G", "I"], action: "Dequeue I. K and L join the right side, behind J." },
+  { x: "J", children: [], open: ["K", "L"], closed: ["A", "B", "C", "D", "E", "F", "G", "I"], visited: ["A", "B", "C", "D", "E", "F", "G", "I", "J"], action: "Dequeue J. J is the goal, so BFS stops." }
+];
+let stepIndex = 0;
+
+function chipList(items, kind) {
+  if (!items.length) return '<span class="empty">empty</span>';
+  return items.map((item, index) => {
+    const cls = kind === "open" && index === 0 ? "next" : kind === "closed" ? "closed" : item === GOAL ? "goal" : "";
+    return `<span class="node-chip ${cls}">${item}</span>`;
+  }).join("");
+}
+
+function treeSvg(step) {
+  const openSet = new Set(step.open);
+  const closedSet = new Set(step.closed);
+  let svg = '<svg viewBox="0 0 620 425" role="img" aria-label="BFS tree">';
+  for (const [from, to] of EDGES) {
+    const a = NODES[from], b = NODES[to];
+    svg += `<line x1="${a.x}" y1="${a.y + 18}" x2="${b.x}" y2="${b.y - 18}" stroke="#34344e" stroke-width="1.4"/>`;
+  }
+  for (const node of Object.values(NODES)) {
+    let fill = "#181824", stroke = "#34344e", text = "#d8d8eb", width = 1.4;
+    if (openSet.has(node.id)) { fill = "#1d3142"; stroke = "#4c91c3"; text = "#9cc9ec"; }
+    if (closedSet.has(node.id)) { fill = "#17372e"; stroke = "#3a8f72"; text = "#75d6ae"; }
+    if (node.id === step.x) { fill = "#3a2b18"; stroke = "#9d7740"; text = "#e3bc72"; width = 2.4; }
+    if (node.id === GOAL) { stroke = step.x === GOAL ? "#9a5360" : "#8f6a3d"; width = step.x === GOAL ? 3 : 1.8; }
+    svg += `<circle cx="${node.x}" cy="${node.y}" r="22" fill="${fill}" stroke="${stroke}" stroke-width="${width}"/>`;
+    svg += `<text x="${node.x}" y="${node.y + 5}" text-anchor="middle" font-family="JetBrains Mono, Consolas, monospace" font-size="14" font-weight="700" fill="${text}">${node.id}</text>`;
+  }
+  svg += '<text x="18" y="30" fill="#8c8ca8" font-size="12" font-family="JetBrains Mono, Consolas, monospace">Goal: J</text>';
+  svg += '</svg>';
+  return svg;
+}
+
+function render() {
+  const step = STEPS[stepIndex];
+  const found = step.x === GOAL;
+  document.getElementById("demo").innerHTML = `
+    <div class="demo-grid">
+      <div class="panel tree-wrap">
+        <h3>Tree state</h3>
+        ${treeSvg(step)}
+      </div>
+      <div class="explain">
+        <div class="panel">
+          <div class="label-row"><span>OPEN queue</span><span class="mono">remove leftmost, add right</span></div>
+          <div class="queue-shell">
+            <span class="queue-label">front</span>
+            <div class="queue-row">${chipList(step.open, "open")}</div>
+            <span class="queue-label">rear</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="label-row"><span>CLOSED</span><span class="mono">already expanded</span></div>
+          <div class="closed-row">${chipList(step.closed, "closed")}</div>
+        </div>
+        <div class="action-card">
+          <p><strong>${found ? "Goal found" : step.x ? "Expanded " + step.x : "Ready"}</strong><br>${step.action}</p>
+        </div>
+        <div class="panel">
+          <h3>Current step</h3>
+          <div class="stat-grid">
+            <div class="stat"><div class="k">X</div><div class="v">${step.x || "-"}</div></div>
+            <div class="stat"><div class="k">Children</div><div class="v">${step.children.length ? step.children.join(", ") : "none"}</div></div>
+            <div class="stat"><div class="k">Visited order</div><div class="v">${step.visited.length ? step.visited.join(" -> ") : "-"}</div></div>
+            <div class="stat"><div class="k">Rule</div><div class="v">children to right</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn" onclick="go(${stepIndex - 1})" ${stepIndex === 0 ? "disabled" : ""}>Previous</button>
+      <span class="counter">${stepIndex + 1} / ${STEPS.length}</span>
+      <button class="btn btn-primary" onclick="go(${stepIndex + 1})" ${stepIndex === STEPS.length - 1 ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+  resizeParent();
+}
+
+function go(next) {
+  stepIndex = Math.max(0, Math.min(STEPS.length - 1, next));
+  render();
+}
+
+function resizeParent() {
+  requestAnimationFrame(() => {
+    try {
+      parent.postMessage({ type: "demo-resize", height: document.getElementById("main").getBoundingClientRect().height }, "*");
+    } catch (e) {}
+  });
+}
+
+render();
+</script>
+</body>
+</html>

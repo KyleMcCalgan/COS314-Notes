@@ -8,6 +8,14 @@
 <style>
   :root { --accent: #b05848; --accent2: #4080a8; --accent3: #6838b0; }
   .hero::before { content: '03'; }
+  .demo-frame {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: block;
+    margin: 16px 0;
+    overflow: hidden;
+  }
 </style>
 </head>
 <body>
@@ -72,10 +80,14 @@
   8  | [J,E,C]       |            | I  | K,L
   9  | [K,L,J,E,C]   | [A,B,D,I]  |    |
  10  | [L,J,E,C]     |            | K  | none
- 11  | [J,E,C]       | [A,B,D,I,K]|    |
- 12  | [E,C]         |            | J  | → SUCCESS ✓</div>
+ 11  | [J,E,C]       | [A,B,D,I,K,L] | L  | none
+ 12  | [E,C]         |            | J  | -> SUCCESS</div>
 
-    <p>Order visited: A → B → D → I → K → <strong>J ✓</strong></p>
+    <p>Order visited: A -> B -> D -> I -> K -> L -> <strong>J</strong></p>
+
+    <h3>Interactive Demo: DFS Stack</h3>
+    <p>Step through the same tree while watching OPEN behave as a stack. The leftmost item is popped next, and generated children are pushed back onto the left.</p>
+    <iframe class="demo-frame" src="demos/dfs_stack_visualiser.html" title="DFS Stack Visualiser" style="height:760px"></iframe>
 
     <h3>Properties of DFS</h3>
     <div class="key-diff">
@@ -127,6 +139,10 @@ Iteration 3 (depth limit = 3):
     <div class="callout purple">
       DFID seems wasteful (re-visits earlier nodes), but nodes at early depths are exponentially fewer than deep nodes. The overhead is small. DFID is GUARANTEED to find the shortest path.
     </div>
+
+    <h3>Interactive Demo: IDDFS Visualiser</h3>
+    <p>Step through iterative deepening one depth limit at a time. The visualiser shows each DFS pass, the current depth boundary, the visited order, and where the shallowest goal is found.</p>
+    <iframe class="demo-frame" src="demos/iddfs_visualiser.html" title="IDDFS Visualiser" style="height:640px"></iframe>
 
     <h3>When to prefer DFID over plain DFS</h3>
     <ul>
@@ -185,9 +201,17 @@ Iteration 3 (depth limit = 3):
   7  | [D,E,F,G]       | [A,B,C]      |    |
   8  | [E,F,G]         |              | D  | I,J
   9  | [E,F,G,I,J]     | [A,B,C,D]    |    |
- 10  | [F,G,I,J]       |              | E  | (goal!)  → SUCCESS ✓</div>
+ 10  | [F,G,I,J]       |              | E  | none
+ 11  | [G,I,J]         | [A,B,C,D,E,F]| F  | none
+ 12  | [I,J]           | [A,B,C,D,E,F,G] | G  | none
+ 13  | [J,K,L]         | [A,B,C,D,E,F,G,I] | I  | K,L
+ 14  | [K,L]           |              | J  | -> SUCCESS</div>
 
-    <p>BFS visits nodes level by level: A | B,C | D,E,F,G | I,J,... — always finds the SHALLOWEST goal first.</p>
+    <p>BFS visits nodes level by level: A | B,C | D,E,F,G | I,J,... It always finds the shallowest goal first.</p>
+
+    <h3>Interactive Demo: BFS Queue</h3>
+    <p>Step through the same tree while watching OPEN behave as a queue. The leftmost item is dequeued next, and generated children join the right end.</p>
+    <iframe class="demo-frame" src="demos/bfs_queue_visualiser.html" title="BFS Queue Visualiser" style="height:760px"></iframe>
 
     <h3>Properties of BFS</h3>
     <div class="key-diff">
@@ -269,6 +293,23 @@ Iteration 3 (depth limit = 3):
 </div>
 <script src="collapsible.js"></script>
 <script>
+document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+  frame.addEventListener('load', function () {
+    try {
+      var doc = this.contentDocument;
+      var demo = doc.getElementById('main') || doc.body;
+      this.style.height = Math.ceil(demo.getBoundingClientRect().height) + 'px';
+    } catch (e) {}
+  });
+});
+window.addEventListener('message', function (event) {
+  if (!event.data || event.data.type !== 'demo-resize') return;
+  document.querySelectorAll('iframe.demo-frame').forEach(function (frame) {
+    if (frame.contentWindow === event.source) {
+      frame.style.height = Math.ceil(event.data.height) + 'px';
+    }
+  });
+});
 (function(){
   const bar=document.createElement('div');
   bar.id='progress-bar';

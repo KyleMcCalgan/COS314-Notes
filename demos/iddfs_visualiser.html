@@ -1,0 +1,254 @@
+
+<style>
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.card h3{font-size:14px;font-weight:500;margin:0 0 8px}
+.card p{font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.6}
+.math-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-family:var(--font-mono);font-size:12px;margin:.75rem 0;line-height:2;color:var(--color-text-primary)}
+.hv{color:var(--color-text-success);font-weight:500}
+.hn{color:var(--color-text-danger);font-weight:500}
+.hw{color:var(--color-text-warning);font-weight:500}
+.hi{color:var(--color-text-info);font-weight:500}
+.nav-row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:1rem}
+.btn{padding:8px 20px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:13px;cursor:pointer;color:var(--color-text-primary);transition:all .15s}
+.btn:hover{background:var(--color-background-secondary)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.step-counter{font-size:12px;color:var(--color-text-secondary)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tag-ok{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-success);color:var(--color-text-success)}
+.tag-warn{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-warning);color:var(--color-text-warning)}
+.tag-info{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-info);color:var(--color-text-info)}
+.tag-err{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-danger);color:var(--color-text-danger)}
+.visited-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.visited-node{padding:3px 10px;border-radius:999px;font-size:12px;font-family:var(--font-mono);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+.visited-node.current{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.visited-node.found{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.visited-node.dead{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.depth-badge{display:inline-block;font-size:11px;padding:2px 10px;border-radius:999px;font-weight:500}
+</style>
+
+<div id="main"></div>
+
+<script>
+// Tree structure
+// A(0) -> B(1), C(2)
+// B(1) -> D(3), E(4)
+// C(2) -> F(5)
+// F(5) -> G(6) [GOAL]
+// E(4) -> H(7)
+
+const NODES = {
+  A:{id:'A',depth:0,x:310,y:40,children:['B','C']},
+  B:{id:'B',depth:1,x:170,y:120,children:['D','E']},
+  C:{id:'C',depth:1,x:450,y:120,children:['F']},
+  D:{id:'D',depth:2,x:90,y:210,children:[]},
+  E:{id:'E',depth:2,x:250,y:210,children:['H']},
+  F:{id:'F',depth:2,x:450,y:210,children:['G']},
+  H:{id:'H',depth:3,x:250,y:300,children:[]},
+  G:{id:'G',depth:3,x:450,y:300,children:[]},
+};
+const GOAL = 'G';
+const NR = 22;
+
+// Pre-compute all steps for each depth limit
+function dfsWithLimit(node, limit, currentDepth, steps, visited){
+  steps.push({
+    visiting: node,
+    depth: currentDepth,
+    limit: limit,
+    visited: [...visited, node],
+    status: node === GOAL ? 'found' : currentDepth >= limit ? 'limit' : 'exploring'
+  });
+  visited.push(node);
+  if(node === GOAL) return true;
+  if(currentDepth >= limit) return false;
+  for(const child of NODES[node].children){
+    const found = dfsWithLimit(child, limit, currentDepth+1, steps, visited);
+    if(found) return true;
+  }
+  return false;
+}
+
+const ALL_STEPS = [];
+for(let lim=0; lim<=3; lim++){
+  const steps=[];
+  dfsWithLimit('A', lim, 0, steps, []);
+  ALL_STEPS.push({limit:lim, steps});
+}
+
+// Flatten into one big sequence with separator steps
+const SEQUENCE = [];
+ALL_STEPS.forEach(({limit, steps})=>{
+  SEQUENCE.push({type:'newlimit', limit});
+  steps.forEach(s=>SEQUENCE.push({type:'step', ...s}));
+});
+
+let cur = 0;
+
+function treeColors(stepData){
+  const cols = {};
+  Object.keys(NODES).forEach(k=>cols[k]='default');
+  if(!stepData || stepData.type==='newlimit') return cols;
+  const {visiting, visited, status} = stepData;
+  visited.forEach(n=>{ if(n!==visiting) cols[n]='visited'; });
+  cols[visiting] = status==='found'?'found':status==='limit'?'limit':'current';
+  return cols;
+}
+
+function svgTree(stepData){
+  const cols = treeColors(stepData);
+  const colorMap = {
+    default:{fill:'var(--color-background-secondary)',stroke:'var(--color-border-secondary)',text:'var(--color-text-secondary)'},
+    visited:{fill:'#E6F1FB',stroke:'#185FA5',text:'#185FA5'},
+    current:{fill:'#FFF3DC',stroke:'#BA7517',text:'#BA7517'},
+    found:{fill:'#E1F5EE',stroke:'#0F6E56',text:'#0F6E56'},
+    limit:{fill:'#FDECEA',stroke:'#B91C1C',text:'#B91C1C'},
+  };
+
+  let svg=`<svg width="100%" viewBox="0 0 620 340" style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg)"><title>IDDFS tree</title>`;
+
+  // edges
+  Object.values(NODES).forEach(n=>{
+    n.children.forEach(c=>{
+      const cn=NODES[c];
+      svg+=`<line x1="${n.x}" y1="${n.y}" x2="${cn.x}" y2="${cn.y}" stroke="var(--color-border-secondary)" stroke-width="1"/>`;
+    });
+  });
+
+  // highlight current edge
+  if(stepData && stepData.type==='step' && stepData.visiting!=='A'){
+    const cur=NODES[stepData.visiting];
+    // find parent
+    const parent=Object.values(NODES).find(n=>n.children.includes(stepData.visiting));
+    if(parent){
+      svg+=`<line x1="${parent.x}" y1="${parent.y}" x2="${cur.x}" y2="${cur.y}" stroke="#BA7517" stroke-width="2.5"/>`;
+    }
+  }
+
+  // nodes
+  Object.values(NODES).forEach(n=>{
+    const c=colorMap[cols[n.id]];
+    const isGoal=n.id===GOAL;
+    svg+=`<circle cx="${n.x}" cy="${n.y}" r="${NR}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="${isGoal?2.5:1.5}" stroke-dasharray="${isGoal?'4 2':''}"/>`;
+    svg+=`<text x="${n.x}" y="${n.y}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="${c.stroke}" font-family="var(--font-sans)">${n.id}</text>`;
+    if(isGoal) svg+=`<text x="${n.x}" y="${n.y+NR+13}" text-anchor="middle" font-size="10" fill="${c.stroke}" font-family="var(--font-sans)">GOAL</text>`;
+  });
+
+  // depth labels on left
+  [0,1,2,3].forEach(d=>{
+    const ys=[40,120,210,300];
+    svg+=`<text x="16" y="${ys[d]}" dominant-baseline="central" font-size="10" fill="var(--color-text-tertiary)" font-family="var(--font-sans)">d=${d}</text>`;
+  });
+
+  // depth limit line
+  if(stepData && stepData.type==='step'){
+    const lim=stepData.limit;
+    const ys=[40,120,210,300];
+    if(lim<3){
+      const lineY=ys[lim]+NR+12;
+      svg+=`<line x1="30" y1="${lineY}" x2="590" y2="${lineY}" stroke="#BA7517" stroke-width="1" stroke-dasharray="6 3"/>`;
+      svg+=`<text x="595" y="${lineY}" dominant-baseline="central" font-size="10" fill="#BA7517" font-family="var(--font-sans)" text-anchor="end">limit=${lim}</text>`;
+    }
+  }
+
+  svg+=`</svg>`;
+  return `<div style="margin:1rem 0">${svg}</div>`;
+}
+
+function limitColor(lim){
+  return ['#185FA5','#0F6E56','#7C3AED','#B91C1C'][lim]||'var(--color-text-primary)';
+}
+
+function renderStep(idx){
+  const s = SEQUENCE[idx];
+  const total = SEQUENCE.length;
+
+  let content='';
+
+  if(s.type==='newlimit'){
+    content=`
+      <div class="card">
+        <h3>Starting depth limit = ${s.limit}</h3>
+        <p>Run a full DFS but stop going deeper once we reach depth ${s.limit}. If goal not found, we'll increase the limit and restart from A.</p>
+      </div>
+      ${svgTree(null)}
+      <div class="card">
+        <p>The dashed orange line shows the depth limit. Any node below it will not be explored in this iteration.</p>
+      </div>
+    `;
+  } else {
+    const {visiting, depth, limit, visited, status} = s;
+    const statusTag = status==='found'
+      ? `<span class="tag-ok">Goal found!</span>`
+      : status==='limit'
+      ? `<span class="tag-err">At depth limit — backtrack</span>`
+      : `<span class="tag-info">Exploring</span>`;
+
+    const visitedHTML = visited.map((n,i)=>{
+      const cls = n===visiting ? (status==='found'?'found':status==='limit'?'dead':'current') : 'visited';
+      return `<div class="visited-node ${cls}">${n}</div>`;
+    }).join('');
+
+    content=`
+      <div class="card">
+        <h3>Limit = ${limit} — visiting node ${visiting}</h3>
+        <p>Currently at depth ${depth}. ${status==='limit'?`Reached the limit — cannot go deeper. Backtrack.`:status==='found'?`This is the goal node! Search complete.`:`Not the goal. Check children if depth allows.`}</p>
+        <div style="margin-top:8px">${statusTag}</div>
+      </div>
+      ${svgTree(s)}
+      <div class="card">
+        <h3>Visit order so far (limit=${limit})</h3>
+        <div class="visited-list">${visitedHTML}</div>
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">
+          <span style="color:var(--color-text-warning)">■</span> Current &nbsp;
+          <span style="color:#185FA5">■</span> Already visited &nbsp;
+          <span style="color:var(--color-text-danger)">■</span> Hit limit &nbsp;
+          <span style="color:var(--color-text-success)">■</span> Goal
+        </p>
+      </div>
+      <div class="math-block">
+Depth limit: ${limit}
+Current node: ${visiting} (depth ${depth})
+${status==='limit'?`→ depth ${depth} = limit ${limit} → STOP, backtrack`:status==='found'?`→ ${visiting} is the GOAL → search complete!`:`→ depth ${depth} < limit ${limit} → continue exploring children`}
+      </div>
+    `;
+  }
+
+  // summary at end
+  const isLast = idx===total-1;
+  if(isLast){
+    content+=`
+      <div class="card" style="border-color:var(--color-border-success)">
+        <h3>Summary — what IDDFS did</h3>
+        <div class="math-block">
+Limit 0: visited A only → not found<br>
+Limit 1: A→B, A→C → not found<br>
+Limit 2: A→B→D, A→B→E, A→C→F → not found<br>
+Limit 3: A→B→D, A→B→E, A→B→E→H, A→C→F→<span class="hv">G</span> → <span class="hv">found!</span>
+        </div>
+        <p>G was found at depth 3. IDDFS guaranteed finding the shallowest goal, using only O(d) memory like DFS.</p>
+      </div>
+    `;
+  }
+
+  document.getElementById('main').innerHTML=`
+    <div style="font-size:16px;font-weight:500;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--color-border-tertiary)">
+      Depth-First Search with Iterative Deepening
+    </div>
+    ${content}
+    <div class="nav-row">
+      <button class="btn" onclick="go(${idx-1})" ${idx===0?'disabled':''}>← Previous</button>
+      <span class="step-counter">${idx+1} / ${total}</span>
+      <button class="btn ${isLast?'':'btn-primary'}" onclick="go(${idx+1})" ${isLast?'disabled':''}>Next →</button>
+    </div>
+  `;
+}
+
+function go(idx){
+  if(idx<0||idx>=SEQUENCE.length)return;
+  cur=idx;
+  renderStep(idx);
+}
+
+go(0);
+</script>
