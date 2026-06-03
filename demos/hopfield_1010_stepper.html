@@ -1,0 +1,367 @@
+
+<style>
+.dot{width:8px;height:8px;border-radius:50%;background:var(--color-border-secondary);transition:background .2s}
+.dot.active{background:var(--color-text-primary)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.card h3{font-size:14px;font-weight:500;margin:0 0 8px}
+.card p{font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.6}
+.math-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-family:var(--font-mono);font-size:12px;margin:.75rem 0;line-height:2.2;color:var(--color-text-primary)}
+.hv{color:var(--color-text-success);font-weight:500}
+.hn{color:var(--color-text-danger);font-weight:500}
+.hw{color:var(--color-text-warning);font-weight:500}
+.hi{color:var(--color-text-info);font-weight:500}
+.nav-row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:1rem}
+.nav-btn{padding:8px 20px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:13px;cursor:pointer;color:var(--color-text-primary);transition:all .15s}
+.nav-btn:hover{background:var(--color-background-secondary)}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.step-counter{font-size:12px;color:var(--color-text-secondary)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tag-ok{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-success);color:var(--color-text-success)}
+.tag-warn{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-warning);color:var(--color-text-warning)}
+.tag-info{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-info);color:var(--color-text-info)}
+.tag-err{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-background-danger);color:var(--color-text-danger)}
+.bit-row{display:flex;gap:8px;justify-content:center;margin:0.75rem 0}
+.bit{width:52px;height:52px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;font-family:var(--font-mono);transition:all .3s}
+.bit-on{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.bit-off{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.bit-wrong{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.bit-changed{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.bit-active{outline:2px solid var(--color-text-warning);outline-offset:3px}
+.bit-label{width:52px;text-align:center;font-size:11px;color:var(--color-text-secondary)}
+.label-row{display:flex;gap:8px;justify-content:center;margin-bottom:2px}
+.matrix-wrap{overflow-x:auto;margin:.75rem 0}
+.mtable{border-collapse:collapse;margin:0 auto;font-family:var(--font-mono);font-size:13px}
+.mtable td,.mtable th{width:48px;height:38px;text-align:center;border:0.5px solid var(--color-border-tertiary)}
+.mtable th{font-size:11px;font-weight:400;color:var(--color-text-secondary);border:none;height:24px}
+.mtable td{color:var(--color-text-secondary)}
+.mtable td.pos{color:var(--color-text-success);background:var(--color-background-success);font-weight:500}
+.mtable td.neg{color:var(--color-text-danger);background:var(--color-background-danger);font-weight:500}
+.mtable td.zero{color:var(--color-text-tertiary)}
+.mtable td.col-hi{outline:2px solid var(--color-text-warning);outline-offset:-2px;font-weight:600}
+</style>
+
+<div style="display:flex;gap:6px;justify-content:center;margin-bottom:1.5rem" id="dots"></div>
+<div id="panels"></div>
+
+<script>
+const W = [
+  [ 0,-1, 1,-1],
+  [-1, 0,-1, 1],
+  [ 1,-1, 0,-1],
+  [-1, 1,-1, 0]
+];
+
+function matHTML(highlightCol){
+  const hdrs=['','col 1','col 2','col 3','col 4'];
+  const rowL=['','y1','y2','y3','y4'];
+  let h=`<div class="matrix-wrap"><table class="mtable"><tr>`;
+  hdrs.forEach((hd,i)=>h+=`<th${highlightCol===i-1&&i>0?' style="color:var(--color-text-warning);font-weight:500"':''}>${hd}</th>`);
+  h+=`</tr>`;
+  for(let i=0;i<4;i++){
+    h+=`<tr><th style="border:none;font-size:11px;color:var(--color-text-secondary);padding-right:4px">${rowL[i+1]}</th>`;
+    for(let j=0;j<4;j++){
+      const v=W[i][j];
+      const base=v===0?'zero':v>0?'pos':'neg';
+      const colhi=highlightCol===j?' col-hi':'';
+      h+=`<td class="${base}${colhi}">${v}</td>`;
+    }
+    h+=`</tr>`;
+  }
+  h+=`</table></div>`;
+  return h;
+}
+
+function bitRowHTML(vals, wrongIdx=[], changedIdx=[], activeIdx=null){
+  const labels=['y1','y2','y3','y4'];
+  let lrow=`<div class="label-row">`;
+  let brow=`<div class="bit-row">`;
+  vals.forEach((v,i)=>{
+    lrow+=`<div class="bit-label">${labels[i]}</div>`;
+    let cls='bit ';
+    if(i===activeIdx) cls+='bit-active ';
+    if(changedIdx.includes(i)) cls+='bit-changed';
+    else if(wrongIdx.includes(i)) cls+='bit-wrong';
+    else cls+=(v===1?'bit-on':'bit-off');
+    brow+=`<div class="${cls}">${v}</div>`;
+  });
+  lrow+=`</div>`;
+  brow+=`</div>`;
+  return lrow+brow;
+}
+
+const PANELS=[
+  {
+    title:"Setup — stored pattern and noisy input",
+    render:()=>`
+      <div class="card">
+        <h3>What we're doing</h3>
+        <p>Train the Hopfield network on the pattern <span style="font-family:var(--font-mono);font-weight:500">[1 0 1 0]</span>, then present the corrupted input <span style="font-family:var(--font-mono);font-weight:500">[1 1 1 0]</span> and recover the original.</p>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Stored pattern</h3>
+          ${bitRowHTML([1,0,1,0])}
+          <p style="font-size:12px;text-align:center;margin-top:4px">What we want to recall</p>
+        </div>
+        <div class="card">
+          <h3>Noisy input</h3>
+          ${bitRowHTML([1,1,1,0],[1])}
+          <p style="font-size:12px;text-align:center;margin-top:4px">y2 is wrong — should be 0</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>The corruption</h3>
+        <p>Only one bit differs: y2 is 1 in the noisy input but should be 0. The network must figure this out purely from the weight matrix — it has no direct knowledge of the stored pattern during recall.</p>
+      </div>
+    `
+  },
+  {
+    title:"Training — step 1: bipolar transform",
+    render:()=>`
+      <div class="card">
+        <h3>Why we convert</h3>
+        <p>Binary 0 multiplied by anything gives 0 — it destroys information about that position. By converting 0 → −1, every position carries a meaningful signal. Two positions that are both 0 will produce (−1)×(−1) = +1, correctly encoding that they <em>agree</em>.</p>
+      </div>
+      <div class="card">
+        <h3>Apply 2p − 1 to each bit</h3>
+        <div class="math-block">
+Pattern:  [ <span class="hv">1</span>,  <span class="hn">0</span>,  <span class="hv">1</span>,  <span class="hn">0</span> ]<br>
+Formula:  2p − 1<br>
+Bipolar:  [ <span class="hv">1</span>, <span class="hn">−1</span>,  <span class="hv">1</span>, <span class="hn">−1</span> ]
+        </div>
+        <p>Every 1 stays as 1. Every 0 becomes −1. Now we can take the outer product.</p>
+      </div>
+      <div class="card">
+        <h3>What the signs mean</h3>
+        <p>Positions 1 and 3 are both 1 → they agree → weight should be <span class="hv">positive</span>. Positions 1 and 2 disagree (1 vs −1) → weight should be <span class="hn">negative</span>. Positions 2 and 4 are both −1 → they agree → weight should be <span class="hv">positive</span>.</p>
+      </div>
+    `
+  },
+  {
+    title:"Training — step 2: outer product",
+    render:()=>`
+      <div class="card">
+        <h3>Compute vvᵀ then zero the diagonal</h3>
+        <p>Multiply each pair v_i × v_j. Then set all diagonal values to 0 — neurons never connect to themselves.</p>
+        <div class="math-block">
+v = [1, −1, 1, −1]<br>
+<br>
+w12 = 1×(−1) = <span class="hn">−1</span>  (disagree)<br>
+w13 = 1×1   = <span class="hv"> 1</span>  (agree)<br>
+w14 = 1×(−1) = <span class="hn">−1</span>  (disagree)<br>
+w24 = (−1)×(−1) = <span class="hv"> 1</span>  (both off → agree)
+        </div>
+      </div>
+      <div class="card">
+        <h3>Final weight matrix W</h3>
+        ${matHTML(null)}
+        <p style="font-size:12px;color:var(--color-text-secondary);margin-top:6px"><span style="color:var(--color-text-success)">Green = positive</span> (positions agree). <span style="color:var(--color-text-danger)">Red = negative</span> (positions disagree). Grey = 0 (diagonal).</p>
+      </div>
+    `
+  },
+  {
+    title:"Recall — initialise",
+    render:()=>`
+      <div class="card">
+        <h3>Set y = p = noisy input, θ = 0</h3>
+        <p>We start with y equal to the corrupted input. y2 = 1 is the wrong bit. The algorithm will work through each node and correct it.</p>
+      </div>
+      ${bitRowHTML([1,1,1,0],[1])}
+      <div class="card">
+        <h3>Recall formula</h3>
+        <div class="math-block">s_i = p_i + y · (column i of W)<br><br>if s &gt; 0 → y_i = 1<br>if s &lt; 0 → y_i = 0<br>if s = 0 → y_i unchanged</div>
+        <p>We go node by node: y1, y2, y3, y4. After each update, p = y immediately.</p>
+      </div>
+      <div class="card">
+        <h3>Key reminder</h3>
+        <p>Use <span class="hw">column i</span> of W, not row i. And update p = y after <span class="hw">each node</span>, not at the end of the epoch.</p>
+      </div>
+    `
+  },
+  {
+    title:"Epoch 1 — update y1",
+    render:()=>`
+      <div class="card">
+        <h3>Current state: y = [1, 1, 1, 0]</h3>
+        <p>We need column 1 of W: [0, −1, 1, −1]</p>
+        ${matHTML(0)}
+      </div>
+      <div class="card">
+        <h3>Compute s1</h3>
+        <div class="math-block">
+s1 = p1 + y · col1<br>
+   = <span class="hw">1</span> + (1×<span class="hi">0</span> + 1×<span class="hi">−1</span> + 1×<span class="hi">1</span> + 0×<span class="hi">−1</span>)<br>
+   = 1 + (0 − 1 + 1 + 0)<br>
+   = 1 + 0 = <span class="hv">1</span>
+        </div>
+        <p>s1 = 1 &gt; 0 → <strong>y1 = 1</strong> <span class="tag-info">no change</span></p>
+      </div>
+      <div class="card">
+        <h3>State after y1 update — p = y = [1, 1, 1, 0]</h3>
+        ${bitRowHTML([1,1,1,0],[1],[],0)}
+      </div>
+    `
+  },
+  {
+    title:"Epoch 1 — update y2",
+    render:()=>`
+      <div class="card">
+        <h3>Current state: y = [1, 1, 1, 0]</h3>
+        <p>We need column 2 of W: [−1, 0, −1, 1]</p>
+        ${matHTML(1)}
+      </div>
+      <div class="card">
+        <h3>Compute s2</h3>
+        <div class="math-block">
+s2 = p2 + y · col2<br>
+   = <span class="hw">1</span> + (1×<span class="hi">−1</span> + 1×<span class="hi">0</span> + 1×<span class="hi">−1</span> + 0×<span class="hi">1</span>)<br>
+   = 1 + (−1 + 0 − 1 + 0)<br>
+   = 1 + (−2) = <span class="hn">−1</span>
+        </div>
+        <p>s2 = −1 &lt; 0 → <strong>y2 = 0</strong> <span class="tag-warn">flipped 1 → 0</span></p>
+      </div>
+      <div class="card">
+        <h3>State after y2 update — p = y = [1, 0, 1, 0]</h3>
+        ${bitRowHTML([1,0,1,0],[],[1],1)}
+        <p style="font-size:12px;color:var(--color-text-secondary);text-align:center;margin-top:4px">y2 corrected. This is already the stored pattern.</p>
+      </div>
+    `
+  },
+  {
+    title:"Epoch 1 — update y3",
+    render:()=>`
+      <div class="card">
+        <h3>Current state: y = [1, 0, 1, 0]</h3>
+        <p>We need column 3 of W: [1, −1, 0, −1]</p>
+        ${matHTML(2)}
+      </div>
+      <div class="card">
+        <h3>Compute s3</h3>
+        <div class="math-block">
+s3 = p3 + y · col3<br>
+   = <span class="hw">1</span> + (1×<span class="hi">1</span> + 0×<span class="hi">−1</span> + 1×<span class="hi">0</span> + 0×<span class="hi">−1</span>)<br>
+   = 1 + (1 + 0 + 0 + 0)<br>
+   = 1 + 1 = <span class="hv">2</span>
+        </div>
+        <p>s3 = 2 &gt; 0 → <strong>y3 = 1</strong> <span class="tag-info">no change</span></p>
+      </div>
+      <div class="card">
+        <h3>State after y3 update — p = y = [1, 0, 1, 0]</h3>
+        ${bitRowHTML([1,0,1,0],[],[],2)}
+      </div>
+    `
+  },
+  {
+    title:"Epoch 1 — update y4",
+    render:()=>`
+      <div class="card">
+        <h3>Current state: y = [1, 0, 1, 0]</h3>
+        <p>We need column 4 of W: [−1, 1, −1, 0]</p>
+        ${matHTML(3)}
+      </div>
+      <div class="card">
+        <h3>Compute s4</h3>
+        <div class="math-block">
+s4 = p4 + y · col4<br>
+   = <span class="hw">0</span> + (1×<span class="hi">−1</span> + 0×<span class="hi">1</span> + 1×<span class="hi">−1</span> + 0×<span class="hi">0</span>)<br>
+   = 0 + (−1 + 0 − 1 + 0)<br>
+   = 0 + (−2) = <span class="hn">−2</span>
+        </div>
+        <p>s4 = −2 &lt; 0 → <strong>y4 = 0</strong> <span class="tag-info">no change</span></p>
+      </div>
+      <div class="card">
+        <h3>State after y4 update — p = y = [1, 0, 1, 0]</h3>
+        ${bitRowHTML([1,0,1,0],[],[],3)}
+      </div>
+    `
+  },
+  {
+    title:"Convergence check — epoch 2",
+    render:()=>`
+      <div class="card">
+        <h3>End of epoch 1 — did anything change?</h3>
+        <div class="two-col">
+          <div>
+            <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Start of epoch 1</p>
+            ${bitRowHTML([1,1,1,0],[1])}
+          </div>
+          <div>
+            <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">End of epoch 1</p>
+            ${bitRowHTML([1,0,1,0])}
+          </div>
+        </div>
+        <p style="margin-top:8px">y2 changed (1→0). Not yet confirmed converged — must run epoch 2.</p>
+      </div>
+      <div class="card">
+        <h3>Epoch 2 — all four updates with y = [1, 0, 1, 0]</h3>
+        <div class="math-block">
+s1 = 1 + (1×0  + 0×−1 + 1×1  + 0×−1) = 1 + 1 = <span class="hv">2</span>  → y1 = 1 (no change)<br>
+s2 = 0 + (1×−1 + 0×0  + 1×−1 + 0×1 ) = 0 + (−2) = <span class="hn">−2</span> → y2 = 0 (no change)<br>
+s3 = 1 + (1×1  + 0×−1 + 1×0  + 0×−1) = 1 + 1 = <span class="hv">2</span>  → y3 = 1 (no change)<br>
+s4 = 0 + (1×−1 + 0×1  + 1×−1 + 0×0 ) = 0 + (−2) = <span class="hn">−2</span> → y4 = 0 (no change)
+        </div>
+        <p><span class="tag-ok">Converged</span> — no node changed. Algorithm terminates.</p>
+      </div>
+    `
+  },
+  {
+    title:"Summary",
+    render:()=>`
+      <div class="card">
+        <h3>Full journey</h3>
+        <div class="math-block">
+Stored pattern:  [ 1,  <span class="hv">0</span>,  1,  0 ]<br>
+Noisy input:     [ 1,  <span class="hn">1</span>,  1,  0 ]  ← y2 wrong<br>
+After epoch 1:   [ 1,  <span class="hw">0</span>,  1,  0 ]  ← y2 corrected<br>
+After epoch 2:   [ 1,   0,  1,  0 ]  ← no change → converged ✓
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Why y2 flipped</h3>
+          <p>Column 2 of W is [−1, 0, −1, 1]. Nodes y1 and y3 were both 1, and both have weight −1 toward y2 — they strongly suppressed it. The stored pattern says y2 should disagree with y1 and y3, and the weights enforced that.</p>
+        </div>
+        <div class="card">
+          <h3>Why y4 stayed 0</h3>
+          <p>Column 4 of W is [−1, 1, −1, 0]. y1 and y3 both being 1 gave s4 = −2, firmly pushing y4 to 0. The pattern encodes that y4 disagrees with y1 and y3, which is correct.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Exam checklist for this question</h3>
+        <div class="math-block" style="font-size:11px;line-height:2">
+1. Binary → bipolar: 2p−1 → [1,−1,1,−1]<br>
+2. Outer product vvᵀ → zero diagonal → W<br>
+3. Set y = p = noisy input, θ = 0<br>
+4. For each node: s_i = p_i + y·(col i of W)<br>
+5. Apply threshold, update p=y immediately<br>
+6. Run second epoch to confirm convergence
+        </div>
+      </div>
+    `
+  }
+];
+
+let cur=0;
+function dots(){
+  document.getElementById('dots').innerHTML=PANELS.map((_,i)=>`<div class="dot${i===0?' active':''}" id="d${i}"></div>`).join('');
+}
+function render(idx){
+  const p=PANELS[idx];
+  document.getElementById('panels').innerHTML=`
+    <div style="font-size:16px;font-weight:500;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid var(--color-border-tertiary)">${p.title}</div>
+    ${p.render()}
+    <div class="nav-row">
+      <button class="nav-btn" onclick="go(${idx-1})" ${idx===0?'disabled':''}>← Previous</button>
+      <span class="step-counter">${idx+1} / ${PANELS.length}</span>
+      <button class="nav-btn" onclick="go(${idx+1})" ${idx===PANELS.length-1?'disabled':''}>Next →</button>
+    </div>`;
+}
+function go(idx){
+  if(idx<0||idx>=PANELS.length)return;
+  cur=idx;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  render(idx);
+}
+dots();
+render(0);
+</script>
